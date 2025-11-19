@@ -30,5 +30,3 @@ export enum ExtractionStatus {
   COMPLETE = 'COMPLETE',
   ERROR = 'ERROR'
 }
-
-declare module 'heic2any';

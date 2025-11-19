@@ -12,7 +12,8 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "@google/genai": "^1.30.0",
-    "heic2any": "0.0.4"
+    "heic2any": "0.0.4",
+    "xlsx": "latest"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
