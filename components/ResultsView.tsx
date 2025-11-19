@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { OCRResult } from '../types';
 import { IconCopy, IconCSV, IconDatabase, IconTable } from './Icons';
 // @ts-ignore
@@ -12,12 +12,6 @@ type TabType = 'json' | 'text' | 'csv' | 'xlsx' | 'sql';
 
 const ResultsView: React.FC<ResultsViewProps> = ({ data }) => {
   const [activeTab, setActiveTab] = useState<TabType>('json');
-
-  useEffect(() => {
-    if (data) {
-      setActiveTab('text');
-    }
-  }, [data]);
 
   if (!data) {
     return (

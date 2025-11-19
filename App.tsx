@@ -120,15 +120,13 @@ const App: React.FC = () => {
   };
 
   const handleProcess = async () => {
-    if (!selectedFile) {
-      addLog('No file selected.', 'ERROR');
-      return;
-    }
+    if (!selectedFile) return;
 
-    // Validity check: If it's not HEIC, we absolutely need the previewUrl (which represents the file data)
-    if (!isHeic && !previewUrl) {
-      addLog('File data is not yet ready. Please wait.', 'WARN');
-      return;
+    // If HEIC conversion failed and no preview, we can still try raw file, but alert user
+    if (isHeic && !previewUrl && !isConverting) {
+       // Fallthrough to attempt raw processing
+    } else if (!previewUrl) {
+       return;
     }
 
     setStatus(ExtractionStatus.PROCESSING);
@@ -177,7 +175,7 @@ const App: React.FC = () => {
     }
 
     if (!payloadBase64) {
-      addLog('No payload data available. Extraction aborted.', 'ERROR');
+      addLog('No payload data available.', 'ERROR');
       setStatus(ExtractionStatus.ERROR);
       return;
     }
@@ -212,20 +210,6 @@ const App: React.FC = () => {
   const filterStyle = {
     filter: `contrast(${filters.contrast}%) brightness(${filters.brightness}%) grayscale(${filters.grayscale}%)`
   };
-
-  // Determine if the start button should be disabled
-  // It is disabled if:
-  // 1. No file selected
-  // 2. Status is processing
-  // 3. Converting HEIC
-  // 4. File is selected but previewUrl is NOT ready (and it's not a HEIC file, which allows fallback)
-  //    Note: If isHeic is true, previewUrl might be null if conversion failed, but we still allow processing via raw file.
-  //    However, if isHeic is false, previewUrl MUST be present.
-  const isButtonDisabled = 
-    !selectedFile || 
-    status === ExtractionStatus.PROCESSING || 
-    isConverting || 
-    (!isHeic && !previewUrl);
 
   return (
     <div className="min-h-screen flex flex-col font-sans text-gray-300 selection:bg-emerald-500/30">
@@ -336,11 +320,11 @@ const App: React.FC = () => {
               </div>
             </div>
             <button
-              disabled={isButtonDisabled}
+              disabled={!selectedFile || status === ExtractionStatus.PROCESSING || isConverting}
               onClick={handleProcess}
               className={`
                 flex items-center space-x-2 px-6 py-2.5 rounded-lg font-medium text-sm transition-all
-                ${isButtonDisabled
+                ${!selectedFile || isConverting
                   ? 'bg-gray-800 text-gray-500 cursor-not-allowed' 
                   : status === ExtractionStatus.PROCESSING
                     ? 'bg-emerald-900/20 text-emerald-500 border border-emerald-900/50 cursor-wait'
