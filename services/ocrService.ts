@@ -1,11 +1,11 @@
-import { GoogleGenAI, SchemaType } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { OCRResult } from "../types";
 
 // Initialize Gemini
 // Note: In a real production app, you might route this through a backend proxy to keep the key secure,
 // or use the Docker container as requested in the prompt.
 // For this web demo, we use the client-side SDK directly.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const performOCRExtraction = async (
   file: File, 
@@ -24,21 +24,16 @@ export const performOCRExtraction = async (
     Perform high-fidelity OCR on this image. 
     The image likely contains a list of items, possibly solar energy equipment (inverters, panels, frames).
     
-    Return a purely JSON response with the following structure:
-    {
-      "file": "${file.name}",
-      "text": "Full concatenated text found in the image",
-      "blocks": [
-        {
-          "text": "text of the line or block",
-          "confidence": 0.99,
-          "bbox": [[x1,y1], [x2,y2], [x3,y3], [x4,y4]] (normalized 0-1000 coordinates)
-        }
-      ]
-    }
-
+    Extract all text and bounding boxes.
     Treat this as a data extraction task. Be precise with numbers and product codes.
   `;
+
+  // Extract mime type from base64 header if present, otherwise fallback to file.type
+  let mimeType = file.type;
+  const match = base64Data.match(/^data:(.+);base64,/);
+  if (match) {
+    mimeType = match[1];
+  }
 
   // Remove header from base64 for the API
   const cleanBase64 = base64Data.split(',')[1];
@@ -49,12 +44,37 @@ export const performOCRExtraction = async (
       model: model,
       contents: {
         parts: [
-          { inlineData: { mimeType: file.type, data: cleanBase64 } },
+          { inlineData: { mimeType: mimeType, data: cleanBase64 } },
           { text: prompt }
         ]
       },
       config: {
         responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            text: { type: Type.STRING, description: "Full concatenated text found in the image" },
+            blocks: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  text: { type: Type.STRING },
+                  confidence: { type: Type.NUMBER },
+                  bbox: {
+                    type: Type.ARRAY,
+                    items: {
+                      type: Type.ARRAY,
+                      items: { type: Type.NUMBER }
+                    }
+                  }
+                },
+                required: ["text", "confidence", "bbox"]
+              }
+            }
+          },
+          required: ["text", "blocks"]
+        }
       }
     });
 
@@ -63,10 +83,13 @@ export const performOCRExtraction = async (
     const text = response.text;
     if (!text) throw new Error("No text returned from model");
 
-    const result = JSON.parse(text) as OCRResult;
+    const parsed = JSON.parse(text);
     
-    // Ensure filename matches exactly what we sent if the model hallucinated it
-    result.file = file.name;
+    const result: OCRResult = {
+      file: file.name,
+      text: parsed.text,
+      blocks: parsed.blocks || []
+    };
     
     onLog(`Normalization complete. ${result.blocks.length} blocks identified.`);
     

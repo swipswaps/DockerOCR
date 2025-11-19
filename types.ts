@@ -17,6 +17,12 @@ export interface LogEntry {
   message: string;
 }
 
+export interface ImageFilters {
+  contrast: number;
+  brightness: number;
+  grayscale: number;
+}
+
 export enum ExtractionStatus {
   IDLE = 'IDLE',
   UPLOADING = 'UPLOADING',
@@ -24,3 +30,5 @@ export enum ExtractionStatus {
   COMPLETE = 'COMPLETE',
   ERROR = 'ERROR'
 }
+
+declare module 'heic2any';

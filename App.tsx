@@ -1,9 +1,17 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { ExtractionStatus, LogEntry, OCRResult } from './types';
+import { ExtractionStatus, LogEntry, OCRResult, ImageFilters } from './types';
 import { IconUpload, IconTerminal, IconCheck, IconFile } from './components/Icons';
 import Terminal from './components/Terminal';
 import ResultsView from './components/ResultsView';
+import ImageControls from './components/ImageControls';
 import { performOCRExtraction } from './services/ocrService';
+import heic2any from 'heic2any';
+
+const DEFAULT_FILTERS: ImageFilters = {
+  contrast: 100,
+  brightness: 100,
+  grayscale: 0,
+};
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<ExtractionStatus>(ExtractionStatus.IDLE);
@@ -11,6 +19,9 @@ const App: React.FC = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [result, setResult] = useState<OCRResult | null>(null);
+  const [filters, setFilters] = useState<ImageFilters>(DEFAULT_FILTERS);
+  const [isHeic, setIsHeic] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -29,30 +40,93 @@ const App: React.FC = () => {
     }
   };
 
-  const processFileSelection = (file: File) => {
+  const processFileSelection = async (file: File) => {
     setSelectedFile(file);
     setResult(null);
     setLogs([]);
     setStatus(ExtractionStatus.IDLE);
+    setFilters(DEFAULT_FILTERS);
+    setPreviewUrl(null);
     
-    // Preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreviewUrl(e.target?.result as string);
+    const isHeicFile = file.name.toLowerCase().endsWith('.heic');
+    setIsHeic(isHeicFile);
+
+    if (isHeicFile) {
       addLog(`File loaded: ${file.name}`, 'INFO');
-      
-      // Mock log for HEIC detection to simulated docker environment capability
-      if (file.name.toLowerCase().endsWith('.heic')) {
-        addLog('Format detected: HEIC. Utilizing ImageMagick/libheif for normalization...', 'WARN');
-      } else {
-        addLog(`Format detected: ${file.type.split('/')[1]?.toUpperCase() || 'UNKNOWN'}`, 'INFO');
+      addLog('Format detected: HEIC. Converting to PNG for browser preview...', 'WARN');
+      setIsConverting(true);
+
+      try {
+        // Convert HEIC to PNG blob using heic2any
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: "image/png",
+          quality: 0.8
+        });
+
+        const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setPreviewUrl(e.target?.result as string);
+          setIsConverting(false);
+          addLog('HEIC conversion complete. Preview and filters enabled.', 'SUCCESS');
+        };
+        reader.onerror = () => {
+          setIsConverting(false);
+          addLog('Error reading converted HEIC blob.', 'ERROR');
+        }
+        reader.readAsDataURL(blob);
+      } catch (error: any) {
+        setIsConverting(false);
+        console.error(error);
+        addLog(`HEIC conversion failed: ${error.message || 'Unknown error'}`, 'ERROR');
+        // We can't show preview, but we can still try to process the raw file
       }
-    };
-    reader.readAsDataURL(file);
+    } else {
+      // Standard Image
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviewUrl(e.target?.result as string);
+        addLog(`File loaded: ${file.name}`, 'INFO');
+        addLog(`Format detected: ${file.type.split('/')[1]?.toUpperCase() || 'UNKNOWN'}`, 'INFO');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Generates a new Base64 string with filters applied via Canvas
+  const generateProcessedImage = async (originalBase64: string, currentFilters: ImageFilters): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          // Apply CSS-like filters to context
+          ctx.filter = `contrast(${currentFilters.contrast}%) brightness(${currentFilters.brightness}%) grayscale(${currentFilters.grayscale}%)`;
+          ctx.drawImage(img, 0, 0, img.width, img.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.95));
+        } else {
+          resolve(originalBase64);
+        }
+      };
+      img.onerror = () => resolve(originalBase64);
+      img.src = originalBase64;
+    });
   };
 
   const handleProcess = async () => {
-    if (!selectedFile || !previewUrl) return;
+    if (!selectedFile) return;
+
+    // If HEIC conversion failed and no preview, we can still try raw file, but alert user
+    if (isHeic && !previewUrl && !isConverting) {
+       // Fallthrough to attempt raw processing
+    } else if (!previewUrl) {
+       return;
+    }
 
     setStatus(ExtractionStatus.PROCESSING);
     addLog('Initializing Docker container environment...', 'INFO');
@@ -60,12 +134,55 @@ const App: React.FC = () => {
     // Simulate Docker startup time
     await new Promise(r => setTimeout(r, 600));
     addLog('Container started: paddle-ocr-v2.4', 'SUCCESS');
-    addLog(`Processing ${selectedFile.name} via /app/process.sh...`, 'INFO');
+
+    // Determine payload
+    let payloadBase64 = previewUrl;
+
+    const filtersChanged = filters.contrast !== 100 || filters.brightness !== 100 || filters.grayscale !== 0;
+    
+    // LOGIC: 
+    // 1. If filters are changed, we MUST use the processed image (from previewUrl + canvas).
+    //    This applies to both regular images and converted HEIC previews.
+    // 2. If filters are NOT changed:
+    //    a. If HEIC, we prefer the original RAW file (better quality/native docker handling).
+    //    b. If Not HEIC, previewUrl is already the original file base64.
+
+    if (filtersChanged && previewUrl) {
+        addLog(`Applying image pre-processing: Contrast ${filters.contrast}%, Brightness ${filters.brightness}%, Grayscale ${filters.grayscale}%...`, 'INFO');
+        try {
+          // Apply filters to the visible preview image
+          payloadBase64 = await generateProcessedImage(previewUrl, filters);
+          addLog('Image pre-processing complete. Normalized to JPEG.', 'SUCCESS');
+        } catch (e) {
+          addLog('Pre-processing failed, falling back to available image data.', 'WARN');
+        }
+    } else if (isHeic) {
+        // No filters, HEIC -> Use original file
+        addLog('Using native HEIC file for extraction (skipping browser preview conversion data).', 'INFO');
+        try {
+           payloadBase64 = await new Promise<string>((resolve, reject) => {
+             const reader = new FileReader();
+             reader.onload = (e) => resolve(e.target?.result as string);
+             reader.onerror = reject;
+             reader.readAsDataURL(selectedFile);
+           });
+        } catch (e) {
+           addLog('Failed to read original HEIC file.', 'ERROR');
+           setStatus(ExtractionStatus.ERROR);
+           return;
+        }
+    }
+
+    if (!payloadBase64) {
+      addLog('No payload data available.', 'ERROR');
+      setStatus(ExtractionStatus.ERROR);
+      return;
+    }
+
+    addLog(`Processing payload via /app/process.sh...`, 'INFO');
 
     try {
-      // Perform actual AI extraction using Gemini as the backend engine
-      const data = await performOCRExtraction(selectedFile, previewUrl, (msg) => addLog(msg, 'INFO'));
-      
+      const data = await performOCRExtraction(selectedFile, payloadBase64, (msg) => addLog(msg, 'INFO'));
       setResult(data);
       setStatus(ExtractionStatus.COMPLETE);
       addLog('Output written to /app/output/result.json', 'SUCCESS');
@@ -85,6 +202,12 @@ const App: React.FC = () => {
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       processFileSelection(e.dataTransfer.files[0]);
     }
+  };
+
+  // We always apply the CSS filter to the preview image because previewUrl is now the "source" 
+  // (either original or converted PNG).
+  const filterStyle = {
+    filter: `contrast(${filters.contrast}%) brightness(${filters.brightness}%) grayscale(${filters.grayscale}%)`
   };
 
   return (
@@ -113,7 +236,7 @@ const App: React.FC = () => {
       <main className="flex-1 flex overflow-hidden p-4 space-x-4">
         
         {/* Left Column: Input & Visuals */}
-        <div className="w-1/2 flex flex-col space-y-4">
+        <div className="w-1/2 flex flex-col space-y-4 overflow-y-auto pr-1">
           
           {/* Upload Area */}
           <div 
@@ -135,16 +258,25 @@ const App: React.FC = () => {
               accept="image/png, image/jpeg, image/heic, .heic"
             />
             
-            {previewUrl ? (
-              <div className="relative w-full h-full flex items-center justify-center bg-black/40">
-                <img src={previewUrl} alt="Preview" className="max-w-full max-h-full object-contain opacity-80" />
-                <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-60"></div>
+            {isConverting ? (
+                <div className="flex flex-col items-center justify-center space-y-3">
+                  <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-emerald-400 text-sm font-mono animate-pulse">Converting HEIC...</p>
+                </div>
+            ) : previewUrl ? (
+              <div className="relative w-full h-full flex items-center justify-center bg-[#0B0F19]">
+                 <img 
+                  src={previewUrl} 
+                  alt="Preview" 
+                  className="max-w-full max-h-full object-contain transition-all duration-200 z-10" 
+                  style={filterStyle}
+                />
                 
                 {/* Change File Overlay */}
-                <div className="absolute bottom-4 right-4">
+                <div className="absolute bottom-4 right-4 z-20">
                    <button 
                     onClick={() => fileInputRef.current?.click()}
-                    className="bg-gray-800 hover:bg-gray-700 text-white text-xs px-3 py-1.5 rounded-lg border border-gray-700 shadow-lg transition-all"
+                    className="bg-gray-900/80 hover:bg-gray-800 text-white text-xs px-3 py-1.5 rounded-lg border border-gray-700 shadow-lg backdrop-blur-sm transition-all"
                    >
                      Change File
                    </button>
@@ -162,6 +294,15 @@ const App: React.FC = () => {
             )}
           </div>
 
+          {/* Image Controls (Enabled if file is selected AND conversion is done) */}
+          {selectedFile && !isConverting && (
+            <ImageControls 
+              filters={filters} 
+              onChange={setFilters} 
+              disabled={status === ExtractionStatus.PROCESSING}
+            />
+          )}
+
           {/* Control Panel */}
           <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 flex items-center justify-between shadow-sm">
             <div className="flex items-center space-x-3">
@@ -169,7 +310,7 @@ const App: React.FC = () => {
                 <IconFile />
               </div>
               <div>
-                 <p className="text-sm font-medium text-gray-200">
+                 <p className="text-sm font-medium text-gray-200 truncate max-w-[150px]">
                    {selectedFile ? selectedFile.name : 'No file selected'}
                  </p>
                  <p className="text-xs text-gray-500">
@@ -178,11 +319,11 @@ const App: React.FC = () => {
               </div>
             </div>
             <button
-              disabled={!selectedFile || status === ExtractionStatus.PROCESSING}
+              disabled={!selectedFile || status === ExtractionStatus.PROCESSING || isConverting}
               onClick={handleProcess}
               className={`
                 flex items-center space-x-2 px-6 py-2.5 rounded-lg font-medium text-sm transition-all
-                ${!selectedFile 
+                ${!selectedFile || isConverting
                   ? 'bg-gray-800 text-gray-500 cursor-not-allowed' 
                   : status === ExtractionStatus.PROCESSING
                     ? 'bg-emerald-900/20 text-emerald-500 border border-emerald-900/50 cursor-wait'
@@ -207,7 +348,7 @@ const App: React.FC = () => {
           </div>
 
           {/* Terminal Output */}
-          <div className="flex-1 min-h-0 relative">
+          <div className="flex-1 min-h-[200px] relative">
              <div className="absolute top-2 right-2 z-10 opacity-50">
                <IconTerminal />
              </div>
