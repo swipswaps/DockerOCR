@@ -1,0 +1,5 @@
+{
+  "name": "DockerOCR Dashboard",
+  "description": "A high-performance, industrial-grade OCR dashboard designed to interface with containerized extraction engines like PaddleOCR or Gemini Vision.",
+  "requestFramePermissions": []
+}
