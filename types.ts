@@ -23,6 +23,8 @@ export interface ImageFilters {
   grayscale: number;
 }
 
+export type OCREngine = 'GEMINI' | 'PADDLE';
+
 export enum ExtractionStatus {
   IDLE = 'IDLE',
   UPLOADING = 'UPLOADING',

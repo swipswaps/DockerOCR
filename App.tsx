@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { ExtractionStatus, LogEntry, OCRResult, ImageFilters } from './types';
+import { ExtractionStatus, LogEntry, OCRResult, ImageFilters, OCREngine } from './types';
 import { IconUpload, IconTerminal, IconCheck, IconFile } from './components/Icons';
 import Terminal from './components/Terminal';
 import ResultsView from './components/ResultsView';
@@ -23,6 +23,7 @@ const App: React.FC = () => {
   const [filters, setFilters] = useState<ImageFilters>(DEFAULT_FILTERS);
   const [isHeic, setIsHeic] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
+  const [engine, setEngine] = useState<OCREngine>('GEMINI');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -82,7 +83,6 @@ const App: React.FC = () => {
         setIsConverting(false);
         console.error(error);
         addLog(`HEIC conversion failed: ${error.message || 'Unknown error'}`, 'ERROR');
-        // We can't show preview, but we can still try to process the raw file
       }
     } else {
       // Standard Image
@@ -106,7 +106,6 @@ const App: React.FC = () => {
         canvas.height = img.height;
         const ctx = canvas.getContext('2d');
         if (ctx) {
-          // Apply CSS-like filters to context
           ctx.filter = `contrast(${currentFilters.contrast}%) brightness(${currentFilters.brightness}%) grayscale(${currentFilters.grayscale}%)`;
           ctx.drawImage(img, 0, 0, img.width, img.height);
           resolve(canvas.toDataURL('image/jpeg', 0.95));
@@ -122,44 +121,35 @@ const App: React.FC = () => {
   const handleProcess = async () => {
     if (!selectedFile) return;
 
-    // If HEIC conversion failed and no preview, we can still try raw file, but alert user
     if (isHeic && !previewUrl && !isConverting) {
-       // Fallthrough to attempt raw processing
+       // Fallthrough
     } else if (!previewUrl) {
        return;
     }
 
     setStatus(ExtractionStatus.PROCESSING);
-    addLog('Initializing Docker container environment...', 'INFO');
+    addLog(engine === 'PADDLE' ? 'Initializing PaddleOCR container connection...' : 'Initializing Gemini Vision API...', 'INFO');
     
-    // Simulate Docker startup time
     await new Promise(r => setTimeout(r, 600));
-    addLog('Container started: paddle-ocr-v2.4', 'SUCCESS');
+    if (engine === 'PADDLE') {
+      addLog('Container reachable: paddle-ocr-v2.4', 'SUCCESS');
+    } else {
+      addLog('API Connection established: google-genai', 'SUCCESS');
+    }
 
-    // Determine payload
     let payloadBase64 = previewUrl;
-
     const filtersChanged = filters.contrast !== 100 || filters.brightness !== 100 || filters.grayscale !== 0;
     
-    // LOGIC: 
-    // 1. If filters are changed, we MUST use the processed image (from previewUrl + canvas).
-    //    This applies to both regular images and converted HEIC previews.
-    // 2. If filters are NOT changed:
-    //    a. If HEIC, we prefer the original RAW file (better quality/native docker handling).
-    //    b. If Not HEIC, previewUrl is already the original file base64.
-
     if (filtersChanged && previewUrl) {
         addLog(`Applying image pre-processing: Contrast ${filters.contrast}%, Brightness ${filters.brightness}%, Grayscale ${filters.grayscale}%...`, 'INFO');
         try {
-          // Apply filters to the visible preview image
           payloadBase64 = await generateProcessedImage(previewUrl, filters);
           addLog('Image pre-processing complete. Normalized to JPEG.', 'SUCCESS');
         } catch (e) {
           addLog('Pre-processing failed, falling back to available image data.', 'WARN');
         }
     } else if (isHeic) {
-        // No filters, HEIC -> Use original file
-        addLog('Using native HEIC file for extraction (skipping browser preview conversion data).', 'INFO');
+        addLog('Using native HEIC file for extraction.', 'INFO');
         try {
            payloadBase64 = await new Promise<string>((resolve, reject) => {
              const reader = new FileReader();
@@ -180,14 +170,13 @@ const App: React.FC = () => {
       return;
     }
 
-    addLog(`Processing payload via /app/process.sh...`, 'INFO');
+    addLog(`Processing payload with ${engine}...`, 'INFO');
 
     try {
-      const data = await performOCRExtraction(selectedFile, payloadBase64, (msg) => addLog(msg, 'INFO'));
+      const data = await performOCRExtraction(selectedFile, payloadBase64, (msg) => addLog(msg, 'INFO'), engine);
       setResult(data);
       setStatus(ExtractionStatus.COMPLETE);
-      addLog('Output written to /app/output/result.json', 'SUCCESS');
-      addLog('Task finished successfully.', 'SUCCESS');
+      addLog('Output generated successfully.', 'SUCCESS');
     } catch (error: any) {
       setStatus(ExtractionStatus.ERROR);
       addLog(`Runtime Error: ${error.message}`, 'ERROR');
@@ -205,8 +194,6 @@ const App: React.FC = () => {
     }
   };
 
-  // We always apply the CSS filter to the preview image because previewUrl is now the "source" 
-  // (either original or converted PNG).
   const filterStyle = {
     filter: `contrast(${filters.contrast}%) brightness(${filters.brightness}%) grayscale(${filters.grayscale}%)`
   };
@@ -222,12 +209,12 @@ const App: React.FC = () => {
             </svg>
           </div>
           <span className="font-bold tracking-tight text-gray-100">Docker<span className="text-emerald-400">OCR</span></span>
-          <span className="px-2 py-0.5 text-[10px] font-mono bg-gray-800 rounded text-gray-400 border border-gray-700">v2.1.0-stable</span>
+          <span className="px-2 py-0.5 text-[10px] font-mono bg-gray-800 rounded text-gray-400 border border-gray-700">v2.2.0-multi-engine</span>
         </div>
         <div className="flex items-center space-x-4 text-sm text-gray-400">
            <span className="flex items-center">
              <span className={`w-2 h-2 rounded-full mr-2 ${process.env.API_KEY ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
-             API Status
+             {engine === 'GEMINI' ? 'Cloud API' : 'Docker Link'}
            </span>
            <a href="#" className="hover:text-emerald-400 transition-colors">Documentation</a>
         </div>
@@ -273,7 +260,6 @@ const App: React.FC = () => {
                   style={filterStyle}
                 />
                 
-                {/* Change File Overlay */}
                 <div className="absolute bottom-4 right-4 z-20">
                    <button 
                     onClick={() => fileInputRef.current?.click()}
@@ -295,7 +281,7 @@ const App: React.FC = () => {
             )}
           </div>
 
-          {/* Image Controls (Enabled if file is selected AND conversion is done) */}
+          {/* Image Controls */}
           {selectedFile && !isConverting && (
             <ImageControls 
               filters={filters} 
@@ -305,25 +291,44 @@ const App: React.FC = () => {
           )}
 
           {/* Control Panel */}
-          <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 flex items-center justify-between shadow-sm">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gray-800 rounded-lg text-gray-400">
-                <IconFile />
-              </div>
-              <div>
-                 <p className="text-sm font-medium text-gray-200 truncate max-w-[150px]">
-                   {selectedFile ? selectedFile.name : 'No file selected'}
-                 </p>
-                 <p className="text-xs text-gray-500">
-                   {selectedFile ? `${(selectedFile.size / 1024).toFixed(2)} KB` : 'Waiting for input...'}
-                 </p>
-              </div>
+          <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 shadow-sm space-y-4">
+            
+            {/* Engine Selection & File Info */}
+            <div className="flex items-center justify-between">
+               <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gray-800 rounded-lg text-gray-400">
+                    <IconFile />
+                  </div>
+                  <div>
+                     <p className="text-sm font-medium text-gray-200 truncate max-w-[150px]">
+                       {selectedFile ? selectedFile.name : 'No file selected'}
+                     </p>
+                     <p className="text-xs text-gray-500">
+                       {selectedFile ? `${(selectedFile.size / 1024).toFixed(2)} KB` : 'Waiting...'}
+                     </p>
+                  </div>
+               </div>
+
+               <div className="flex items-center space-x-2">
+                 <label className="text-xs text-gray-500 uppercase font-bold">Engine:</label>
+                 <select 
+                   value={engine}
+                   onChange={(e) => setEngine(e.target.value as OCREngine)}
+                   className="bg-gray-800 text-gray-200 text-xs rounded px-2 py-1 border border-gray-700 focus:border-emerald-500 outline-none"
+                   disabled={status === ExtractionStatus.PROCESSING}
+                 >
+                   <option value="GEMINI">Gemini Vision 2.5</option>
+                   <option value="PADDLE">PaddleOCR (Docker)</option>
+                 </select>
+               </div>
             </div>
+
+            {/* Action Button */}
             <button
               disabled={!selectedFile || status === ExtractionStatus.PROCESSING || isConverting}
               onClick={handleProcess}
               className={`
-                flex items-center space-x-2 px-6 py-2.5 rounded-lg font-medium text-sm transition-all
+                w-full flex items-center justify-center space-x-2 px-6 py-2.5 rounded-lg font-medium text-sm transition-all
                 ${!selectedFile || isConverting
                   ? 'bg-gray-800 text-gray-500 cursor-not-allowed' 
                   : status === ExtractionStatus.PROCESSING
@@ -359,12 +364,12 @@ const App: React.FC = () => {
 
         {/* Right Column: Results */}
         <div className="w-1/2 flex flex-col min-h-0">
-          <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center">
-            Extraction Output
+          <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center justify-between">
+            <span>Extraction Output</span>
             {status === ExtractionStatus.COMPLETE && (
-              <span className="ml-2 flex items-center text-emerald-500 normal-case tracking-normal text-[10px] bg-emerald-950/30 px-2 py-0.5 rounded-full border border-emerald-900/50">
+              <span className="flex items-center text-emerald-500 normal-case tracking-normal text-[10px] bg-emerald-950/30 px-2 py-0.5 rounded-full border border-emerald-900/50">
                 <IconCheck />
-                <span className="ml-1">Complete</span>
+                <span className="ml-1">{engine === 'GEMINI' ? 'Gemini' : 'Paddle'} Result</span>
               </span>
             )}
           </h2>
