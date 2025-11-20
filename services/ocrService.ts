@@ -22,6 +22,10 @@ const performGeminiExtraction = async (
     
     Extract all text and bounding boxes.
     Treat this as a data extraction task. Be precise with numbers and product codes.
+    
+    Return a JSON object with:
+    - text: The full text extracted from the image, preserving the original layout, newlines, and spacing as closely as possible. Do not flatten the text into a single line. Represents the document structure.
+    - blocks: An array of detected blocks with "text", "confidence" (0-1), and "bbox" (array of coord arrays).
   `;
 
   let mimeType = file.type;
@@ -31,9 +35,40 @@ const performGeminiExtraction = async (
   }
   const cleanBase64 = base64Data.split(',')[1];
 
-  try {
-    onLog(`Sending inference request to neural network...`);
-    const response = await ai.models.generateContent({
+  const generateRequest = async (useSchema: boolean) => {
+    const config: any = {
+      responseMimeType: "application/json",
+    };
+
+    if (useSchema) {
+      config.responseSchema = {
+        type: Type.OBJECT,
+        properties: {
+          text: { type: Type.STRING, description: "Full text extracted from the image, preserving original newlines and layout." },
+          blocks: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                text: { type: Type.STRING },
+                confidence: { type: Type.NUMBER },
+                bbox: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.ARRAY,
+                    items: { type: Type.NUMBER }
+                  }
+                }
+              },
+              required: ["text", "confidence", "bbox"]
+            }
+          }
+        },
+        required: ["text", "blocks"]
+      };
+    }
+
+    return ai.models.generateContent({
       model: model,
       contents: {
         parts: [
@@ -41,35 +76,13 @@ const performGeminiExtraction = async (
           { text: prompt }
         ]
       },
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            text: { type: Type.STRING, description: "Full concatenated text found in the image" },
-            blocks: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  text: { type: Type.STRING },
-                  confidence: { type: Type.NUMBER },
-                  bbox: {
-                    type: Type.ARRAY,
-                    items: {
-                      type: Type.ARRAY,
-                      items: { type: Type.NUMBER }
-                    }
-                  }
-                },
-                required: ["text", "confidence", "bbox"]
-              }
-            }
-          },
-          required: ["text", "blocks"]
-        }
-      }
+      config: config
     });
+  };
+
+  try {
+    onLog(`Sending inference request to neural network...`);
+    const response = await generateRequest(true);
 
     onLog(`Inference complete. Parsing response vector...`);
     
@@ -90,6 +103,30 @@ const performGeminiExtraction = async (
 
   } catch (error: any) {
     console.error(error);
+    
+    // Check for 500 Internal Error or similar API failures
+    if (error.message?.includes('500') || error.status === 500 || error.message?.includes('Internal') || error.message?.includes('Json')) {
+      onLog('WARN: Strict schema failed (API 500/Internal). Retrying with loose JSON mode...');
+      
+      try {
+        const response = await generateRequest(false);
+        const text = response.text;
+        if (!text) throw new Error("No text returned from fallback");
+        
+        // Clean markdown formatting if present (e.g. ```json ... ```)
+        const cleanText = text.replace(/```json\n?|```/g, '').trim();
+        const parsed = JSON.parse(cleanText);
+
+        return {
+          file: file.name,
+          text: parsed.text || "",
+          blocks: parsed.blocks || []
+        };
+      } catch (fallbackError: any) {
+        throw new Error(`Fallback failed: ${fallbackError.message}`);
+      }
+    }
+    
     throw new Error(error.message || "Gemini extraction failed");
   }
 };
@@ -101,35 +138,15 @@ const performPaddleExtraction = async (
 ): Promise<OCRResult> => {
   onLog('Connecting to PaddleOCR container (port 5000)...');
   
-  // In a real environment, this would fetch from the Docker container
-  // const formData = new FormData();
-  // formData.append('file', file);
-  // const response = await fetch('http://localhost:5000/predict', { method: 'POST', body: formData });
-
   // SIMULATION for the web demo
   await new Promise(r => setTimeout(r, 800));
   onLog('PP-OCRv4 detection model loaded.');
   
   await new Promise(r => setTimeout(r, 1200));
   onLog('Running classification & text recognition heads...');
-
-  // We can reuse Gemini to simulate the *result* if we want dynamic text, 
-  // but for a pure "Paddle" simulation without a backend, we might fallback to Gemini 
-  // but label it as Paddle in the logs, OR allow the catch block to return mock data.
-  // Ideally, we'd use a real backend. Here we will fallback to Gemini for the *content* 
-  // but pretend it was Paddle in the logs to demonstrate the UX flow.
   
-  // Note: If the user strictly wanted ONLY Paddle and no API usage, we'd need a WASM build of Paddle 
-  // or a real backend. Assuming the user wants to see the *selector* work.
-  
-  // Check if we can actually hit a local endpoint (won't work in this sandbox but good for code correctness)
   try {
-     // This is expected to fail in the demo environment
-     // throw new Error("Docker container not reachable at localhost:5000"); 
-     // Uncomment above to force simulation path immediately
-     
      // Use Gemini to generate the "Paddle" result for the purpose of this demo
-     // so the user sees actual text from their image.
      onLog('Processing bounding boxes (dt_boxes)...');
      const realResult = await performGeminiExtraction(file, base64Data, (msg) => {
         // Suppress Gemini logs, emit Paddle logs
@@ -139,7 +156,7 @@ const performPaddleExtraction = async (
      return realResult;
 
   } catch (e) {
-     onLog('WARN: Local Docker container unreachable. Falling back to simulation.');
+     onLog('WARN: Local Docker container/API unreachable. Falling back to simulation.');
      
      // Simulation Fallback (if Gemini also fails or for offline demo)
      return {

@@ -21,6 +21,10 @@ export interface ImageFilters {
   contrast: number;
   brightness: number;
   grayscale: number;
+  rotation: number; // 0, 90, 180, 270
+  flipH: boolean;
+  flipV: boolean;
+  invert: boolean;
 }
 
 export type OCREngine = 'GEMINI' | 'PADDLE';
