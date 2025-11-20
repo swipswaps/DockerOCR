@@ -1,9 +1,12 @@
+
 import React, { useState, useCallback, useRef } from 'react';
 import { ExtractionStatus, LogEntry, OCRResult, ImageFilters, OCREngine } from './types';
-import { IconUpload, IconTerminal, IconCheck, IconFile, IconTabImage, IconTabSliders, IconTabPlay, IconRefresh } from './components/Icons';
+import { IconUpload, IconTerminal, IconCheck, IconFile, IconTabImage, IconTabSliders, IconTabPlay, IconRefresh, IconSelectText, IconEdit } from './components/Icons';
 import Terminal from './components/Terminal';
 import ResultsView from './components/ResultsView';
 import ImageControls from './components/ImageControls';
+import TextOverlay from './components/TextOverlay';
+import ImagePreview, { ImagePreviewRef } from './components/ImagePreview';
 import { performOCRExtraction } from './services/ocrService';
 // @ts-ignore
 import heic2any from 'heic2any';
@@ -18,21 +21,31 @@ const DEFAULT_FILTERS: ImageFilters = {
   invert: false,
 };
 
+const DEFAULT_VIEW_STATE = {
+  zoom: 1,
+  offset: { x: 0, y: 0 }
+};
+
 type LeftTab = 'source' | 'editor' | 'process';
+type ViewMode = 'edit' | 'text';
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<ExtractionStatus>(ExtractionStatus.IDLE);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [processedImage, setProcessedImage] = useState<string | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [result, setResult] = useState<OCRResult | null>(null);
   const [filters, setFilters] = useState<ImageFilters>(DEFAULT_FILTERS);
+  const [viewState, setViewState] = useState(DEFAULT_VIEW_STATE);
   const [isHeic, setIsHeic] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [engine, setEngine] = useState<OCREngine>('GEMINI');
   const [activeLeftTab, setActiveLeftTab] = useState<LeftTab>('source');
+  const [viewMode, setViewMode] = useState<ViewMode>('edit');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imagePreviewRef = useRef<ImagePreviewRef>(null);
 
   const addLog = useCallback((message: string, level: LogEntry['level'] = 'INFO') => {
     setLogs(prev => [...prev, {
@@ -55,7 +68,10 @@ const App: React.FC = () => {
     setLogs([]);
     setStatus(ExtractionStatus.IDLE);
     setFilters(DEFAULT_FILTERS);
+    setViewState(DEFAULT_VIEW_STATE);
     setPreviewUrl(null);
+    setProcessedImage(null);
+    setViewMode('edit');
     setActiveLeftTab('editor'); // Auto-switch to editor
     
     const isHeicFile = file.name.toLowerCase().endsWith('.heic');
@@ -102,7 +118,27 @@ const App: React.FC = () => {
     }
   };
 
-  // Canvas processing for payload (Rotation, Flip, Filters)
+  const handleViewChange = (zoom: number, offset: { x: number, y: number }) => {
+    setViewState({ zoom, offset });
+  };
+
+  const handleCrop = async () => {
+    if (!imagePreviewRef.current) return;
+    try {
+      addLog('Cropping image to visible area...', 'INFO');
+      const croppedImage = await imagePreviewRef.current.getCroppedImage();
+      setPreviewUrl(croppedImage);
+      // Reset filters and view state as they are now "baked in" to the cropped image
+      setFilters(DEFAULT_FILTERS);
+      setViewState(DEFAULT_VIEW_STATE);
+      addLog('Image cropped successfully. Filters reset.', 'SUCCESS');
+    } catch (e) {
+      console.error(e);
+      addLog('Failed to crop image.', 'ERROR');
+    }
+  };
+
+  // Canvas processing for payload (Rotation, Flip, Filters) - Used when NOT cropping manually but sending to API
   const generateProcessedImage = async (originalBase64: string, currentFilters: ImageFilters): Promise<string> => {
     return new Promise((resolve) => {
       const img = new Image();
@@ -180,13 +216,16 @@ const App: React.FC = () => {
     if (previewUrl) {
         addLog('Optimizing image payload...', 'INFO');
         try {
+          // Note: If user has already Cropped, previewUrl is the crop. 
+          // Filters are reset, so this just resizes/compresses.
+          // If user has NOT cropped but applied filters, this applies them.
           payloadBase64 = await generateProcessedImage(previewUrl, filters);
           addLog('Image optimized for transmission.', 'SUCCESS');
         } catch (e) {
           addLog('Optimization failed, using original.', 'WARN');
         }
     } else if (isHeic && !previewUrl) {
-         // HEIC fallback logic if conversion failed but we have file
+         // HEIC fallback logic
          addLog('Using raw HEIC file.', 'INFO');
          try {
            payloadBase64 = await new Promise<string>((resolve, reject) => {
@@ -208,11 +247,15 @@ const App: React.FC = () => {
       return;
     }
 
+    setProcessedImage(payloadBase64);
+
     try {
       const data = await performOCRExtraction(selectedFile, payloadBase64, (msg) => addLog(msg, 'INFO'), engine);
       setResult(data);
       setStatus(ExtractionStatus.COMPLETE);
-      addLog('Extraction successful.', 'SUCCESS');
+      addLog('Extraction successful. Text overlay available in Editor tab.', 'SUCCESS');
+      // Switch to Text mode on success to show user the feature
+      setViewMode('text');
     } catch (error: any) {
       setStatus(ExtractionStatus.ERROR);
       addLog(`Error: ${error.message}`, 'ERROR');
@@ -228,12 +271,6 @@ const App: React.FC = () => {
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       processFileSelection(e.dataTransfer.files[0]);
     }
-  };
-
-  // CSS Transform for real-time preview (much faster than canvas for display)
-  const previewStyle = {
-    filter: `contrast(${filters.contrast}%) brightness(${filters.brightness}%) grayscale(${filters.grayscale}%) invert(${filters.invert ? 100 : 0}%)`,
-    transform: `rotate(${filters.rotation}deg) scaleX(${filters.flipH ? -1 : 1}) scaleY(${filters.flipV ? -1 : 1})`
   };
 
   return (
@@ -294,7 +331,9 @@ const App: React.FC = () => {
                 setLogs([]);
                 setStatus(ExtractionStatus.IDLE);
                 setFilters(DEFAULT_FILTERS);
+                setViewState(DEFAULT_VIEW_STATE);
                 setPreviewUrl(null);
+                setProcessedImage(null);
                 setEngine('GEMINI');
                 setActiveLeftTab('source');
               }}
@@ -377,27 +416,65 @@ const App: React.FC = () => {
             {/* TAB: EDITOR */}
             {activeLeftTab === 'editor' && (
               <div className="h-full flex flex-col space-y-4">
-                {/* Dynamic Preview */}
+                
+                {/* Editor Mode Toggle */}
+                {processedImage && result && (
+                  <div className="flex bg-gray-800 rounded-lg p-1 border border-gray-700 w-max mx-auto z-10 relative">
+                    <button 
+                      onClick={() => setViewMode('edit')}
+                      className={`flex items-center space-x-2 px-3 py-1.5 rounded text-xs font-bold uppercase transition-all ${viewMode === 'edit' ? 'bg-gray-700 text-emerald-400 shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
+                    >
+                      <IconEdit />
+                      <span>Edit</span>
+                    </button>
+                    <button 
+                      onClick={() => setViewMode('text')}
+                      className={`flex items-center space-x-2 px-3 py-1.5 rounded text-xs font-bold uppercase transition-all ${viewMode === 'text' ? 'bg-gray-700 text-emerald-400 shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
+                    >
+                      <IconSelectText />
+                      <span>Select Text</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Dynamic Preview / Text Overlay */}
                 <div className="flex-1 bg-[#0B0F19] rounded-lg border border-gray-800 flex items-center justify-center overflow-hidden relative min-h-[200px]">
-                   {previewUrl ? (
-                      <img 
-                        src={previewUrl} 
-                        alt="Preview" 
-                        className="max-w-full max-h-full object-contain transition-all duration-200" 
-                        style={previewStyle}
+                   {viewMode === 'text' && processedImage && result ? (
+                      <div className="w-full h-full flex justify-center items-start overflow-auto p-4">
+                        <TextOverlay imageUrl={processedImage} blocks={result.blocks} />
+                      </div>
+                   ) : previewUrl ? (
+                      <ImagePreview
+                        ref={imagePreviewRef}
+                        src={previewUrl}
+                        filters={filters}
+                        zoom={viewState.zoom}
+                        offset={viewState.offset}
+                        onViewChange={(zoom, offset) => setViewState({ zoom, offset })}
                       />
                    ) : (
                      <div className="text-gray-600 text-sm">No image loaded</div>
                    )}
                 </div>
-                {/* Controls */}
-                <div className="h-1/2">
-                  <ImageControls 
-                    filters={filters} 
-                    onChange={setFilters} 
-                    disabled={status === ExtractionStatus.PROCESSING} 
-                  />
-                </div>
+                
+                {/* Controls (Hidden in Text Select Mode) */}
+                {viewMode === 'edit' && (
+                  <div className="h-1/2">
+                    <ImageControls 
+                      filters={filters} 
+                      onChange={setFilters} 
+                      disabled={status === ExtractionStatus.PROCESSING}
+                      onZoomIn={() => setViewState(prev => ({ ...prev, zoom: Math.min(prev.zoom * 1.1, 5) }))}
+                      onZoomOut={() => setViewState(prev => ({ ...prev, zoom: Math.max(prev.zoom * 0.9, 1) }))}
+                      onCrop={handleCrop}
+                    />
+                  </div>
+                )}
+                {viewMode === 'text' && (
+                   <div className="h-10 flex items-center justify-center text-xs text-gray-500 italic">
+                      Click and drag on the image to select extracted text.
+                   </div>
+                )}
               </div>
             )}
 

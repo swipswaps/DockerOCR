@@ -1,14 +1,17 @@
 import React from 'react';
 import { ImageFilters } from '../types';
-import { IconAdjustments, IconRefresh, IconRotate, IconFlipH, IconFlipV, IconInvert } from './Icons';
+import { IconAdjustments, IconRefresh, IconRotate, IconFlipH, IconFlipV, IconInvert, IconZoomIn, IconZoomOut, IconCrop } from './Icons';
 
 interface ImageControlsProps {
   filters: ImageFilters;
   onChange: (filters: ImageFilters) => void;
   disabled: boolean;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  onCrop?: () => void;
 }
 
-const ImageControls: React.FC<ImageControlsProps> = ({ filters, onChange, disabled }) => {
+const ImageControls: React.FC<ImageControlsProps> = ({ filters, onChange, disabled, onZoomIn, onZoomOut, onCrop }) => {
   const handleChange = (key: keyof ImageFilters, value: number | boolean) => {
     onChange({ ...filters, [key]: value });
   };
@@ -129,6 +132,25 @@ const ImageControls: React.FC<ImageControlsProps> = ({ filters, onChange, disabl
           />
         </div>
       </div>
+
+      {/* View & Crop Section */}
+      {onZoomIn && onCrop && (
+        <div className="pt-4 border-t border-gray-800/50 flex space-x-2">
+           <div className="flex-1 bg-gray-800 rounded-lg flex items-center p-1">
+             <button onClick={onZoomOut} disabled={disabled} className="flex-1 flex justify-center p-1 text-gray-400 hover:text-emerald-400 disabled:opacity-50"><IconZoomOut /></button>
+             <div className="w-px h-4 bg-gray-700"></div>
+             <button onClick={onZoomIn} disabled={disabled} className="flex-1 flex justify-center p-1 text-gray-400 hover:text-emerald-400 disabled:opacity-50"><IconZoomIn /></button>
+           </div>
+           <button 
+             onClick={onCrop} 
+             disabled={disabled}
+             className="flex-1 bg-emerald-900/20 border border-emerald-900/50 text-emerald-400 rounded-lg flex items-center justify-center space-x-1 text-xs font-bold uppercase tracking-wide hover:bg-emerald-900/40 transition-colors disabled:opacity-50"
+           >
+             <IconCrop />
+             <span>Crop to View</span>
+           </button>
+        </div>
+      )}
 
       <style>{`
         .tool-btn {
