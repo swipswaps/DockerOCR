@@ -1,30 +1,22 @@
 
-import React, { useState, useCallback, useRef } from 'react';
-import { ExtractionStatus, LogEntry, OCRResult, ImageFilters, OCREngine } from './types';
-import { IconUpload, IconTerminal, IconCheck, IconFile, IconTabImage, IconTabSliders, IconTabPlay, IconRefresh, IconSelectText, IconEdit } from './components/Icons';
+import React, { useState, useCallback, useRef, useMemo } from 'react';
+import { ExtractionStatus, OCRResult, OCREngine } from './types';
+import { IconUpload, IconFile, IconTabImage, IconTabSliders, IconTabPlay, IconRefresh, IconSelectText, IconEdit } from './components/Icons';
 import Terminal from './components/Terminal';
 import ResultsView from './components/ResultsView';
 import ImageControls from './components/ImageControls';
 import TextOverlay from './components/TextOverlay';
 import ImagePreview, { ImagePreviewRef } from './components/ImagePreview';
+import LoadingSpinner from './components/LoadingSpinner';
+import HelpModal from './components/HelpModal';
 import { performOCRExtraction } from './services/ocrService';
-// @ts-ignore
+import { DEFAULT_VIEW_STATE, PROCESSING_DELAY } from './constants';
+import { useImageFilters } from './hooks/useImageFilters';
+import { useLogger } from './hooks/useLogger';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { generateProcessedImage, isHeicFile, formatFileSize, getFileFormat } from './utils/imageProcessing';
+import { hasApiKey } from './config/env';
 import heic2any from 'heic2any';
-
-const DEFAULT_FILTERS: ImageFilters = {
-  contrast: 100,
-  brightness: 100,
-  grayscale: 0,
-  rotation: 0,
-  flipH: false,
-  flipV: false,
-  invert: false,
-};
-
-const DEFAULT_VIEW_STATE = {
-  zoom: 1,
-  offset: { x: 0, y: 0 }
-};
 
 type LeftTab = 'source' | 'editor' | 'process';
 type ViewMode = 'edit' | 'text';
@@ -34,51 +26,42 @@ const App: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [processedImage, setProcessedImage] = useState<string | null>(null);
-  const [logs, setLogs] = useState<LogEntry[]>([]);
   const [result, setResult] = useState<OCRResult | null>(null);
-  const [filters, setFilters] = useState<ImageFilters>(DEFAULT_FILTERS);
   const [viewState, setViewState] = useState(DEFAULT_VIEW_STATE);
   const [isHeic, setIsHeic] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [engine, setEngine] = useState<OCREngine>('GEMINI');
   const [activeLeftTab, setActiveLeftTab] = useState<LeftTab>('source');
   const [viewMode, setViewMode] = useState<ViewMode>('edit');
-  
+  const [showHelp, setShowHelp] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imagePreviewRef = useRef<ImagePreviewRef>(null);
 
-  const addLog = useCallback((message: string, level: LogEntry['level'] = 'INFO') => {
-    setLogs(prev => [...prev, {
-      id: Math.random().toString(36).substring(7),
-      timestamp: new Date().toISOString().split('T')[1].split('.')[0],
-      level,
-      message
-    }]);
-  }, []);
+  // Custom hooks - MUST be called unconditionally
+  const { filters, setFilters, resetFilters } = useImageFilters();
+  const { logs, addLog, clearLogs } = useLogger();
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      processFileSelection(e.target.files[0]);
-    }
-  };
+  // Check API key availability
+  const apiKeyConfigured = useMemo(() => hasApiKey(), []);
 
-  const processFileSelection = async (file: File) => {
+  const processFileSelection = useCallback(async (file: File) => {
     setSelectedFile(file);
     setResult(null);
-    setLogs([]);
+    clearLogs();
     setStatus(ExtractionStatus.IDLE);
-    setFilters(DEFAULT_FILTERS);
+    resetFilters();
     setViewState(DEFAULT_VIEW_STATE);
     setPreviewUrl(null);
     setProcessedImage(null);
     setViewMode('edit');
-    setActiveLeftTab('editor'); // Auto-switch to editor
-    
-    const isHeicFile = file.name.toLowerCase().endsWith('.heic');
-    setIsHeic(isHeicFile);
+    setActiveLeftTab('editor');
 
-    if (isHeicFile) {
-      addLog(`File loaded: ${file.name}`, 'INFO');
+    const isHeic = isHeicFile(file);
+    setIsHeic(isHeic);
+
+    if (isHeic) {
+      addLog(`File loaded: ${file.name} (${formatFileSize(file.size)})`, 'INFO');
       addLog('Format detected: HEIC. Converting to PNG for browser preview...', 'WARN');
       setIsConverting(true);
 
@@ -87,162 +70,144 @@ const App: React.FC = () => {
           blob: file,
           toType: "image/png",
           quality: 0.8
-        });
+        }) as Blob | Blob[];
 
         const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          setPreviewUrl(e.target?.result as string);
+
+        // Use Promise-based FileReader to avoid callback issues during render
+        try {
+          const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              if (e.target?.result) {
+                resolve(e.target.result as string);
+              } else {
+                reject(new Error('Failed to read converted blob'));
+              }
+            };
+            reader.onerror = () => reject(new Error('FileReader error'));
+            reader.readAsDataURL(blob);
+          });
+
+          // Batch state updates together
+          setPreviewUrl(dataUrl);
           setIsConverting(false);
           addLog('HEIC conversion complete. Preview and filters enabled.', 'SUCCESS');
-        };
-        reader.onerror = () => {
+        } catch (readError) {
           setIsConverting(false);
           addLog('Error reading converted HEIC blob.', 'ERROR');
         }
-        reader.readAsDataURL(blob);
-      } catch (error: any) {
+      } catch (error) {
         setIsConverting(false);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error(error);
-        addLog(`HEIC conversion failed: ${error.message || 'Unknown error'}`, 'ERROR');
+        addLog(`HEIC conversion failed: ${errorMessage}`, 'ERROR');
       }
     } else {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPreviewUrl(e.target?.result as string);
-        addLog(`File loaded: ${file.name}`, 'INFO');
-        addLog(`Format detected: ${file.type.split('/')[1]?.toUpperCase() || 'UNKNOWN'}`, 'INFO');
-      };
-      reader.readAsDataURL(file);
+      // Use Promise-based FileReader for regular images too
+      try {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            if (e.target?.result) {
+              resolve(e.target.result as string);
+            } else {
+              reject(new Error('Failed to read file'));
+            }
+          };
+          reader.onerror = () => reject(new Error('FileReader error'));
+          reader.readAsDataURL(file);
+        });
+
+        setPreviewUrl(dataUrl);
+        addLog(`File loaded: ${file.name} (${formatFileSize(file.size)})`, 'INFO');
+        addLog(`Format detected: ${getFileFormat(file)}`, 'INFO');
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        addLog(`Failed to load file: ${errorMessage}`, 'ERROR');
+      }
     }
-  };
+  }, [addLog, clearLogs, resetFilters]);
 
-  const handleViewChange = (zoom: number, offset: { x: number, y: number }) => {
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      processFileSelection(e.target.files[0]);
+    }
+  }, [processFileSelection]);
+
+  const handleViewChange = useCallback((zoom: number, offset: { x: number, y: number }) => {
     setViewState({ zoom, offset });
-  };
+  }, []);
 
-  const handleCrop = async () => {
+  const handleCrop = useCallback(async () => {
     if (!imagePreviewRef.current) return;
     try {
       addLog('Cropping image to visible area...', 'INFO');
       const croppedImage = await imagePreviewRef.current.getCroppedImage();
       setPreviewUrl(croppedImage);
-      // Reset filters and view state as they are now "baked in" to the cropped image
-      setFilters(DEFAULT_FILTERS);
+      resetFilters();
       setViewState(DEFAULT_VIEW_STATE);
       addLog('Image cropped successfully. Filters reset.', 'SUCCESS');
-    } catch (e) {
-      console.error(e);
-      addLog('Failed to crop image.', 'ERROR');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(error);
+      addLog(`Failed to crop image: ${errorMessage}`, 'ERROR');
     }
-  };
+  }, [addLog, resetFilters]);
 
-  // Canvas processing for payload (Rotation, Flip, Filters) - Used when NOT cropping manually but sending to API
-  const generateProcessedImage = async (originalBase64: string, currentFilters: ImageFilters): Promise<string> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        // Calculate scaling to limit max dimension to 1500px to avoid API 500 errors
-        const maxDim = 1500;
-        let scale = 1;
-        if (img.width > maxDim || img.height > maxDim) {
-          scale = maxDim / Math.max(img.width, img.height);
-        }
 
-        const width = img.width * scale;
-        const height = img.height * scale;
 
-        // Determine canvas size based on rotation
-        if (currentFilters.rotation % 180 !== 0) {
-          canvas.width = height;
-          canvas.height = width;
-        } else {
-          canvas.width = width;
-          canvas.height = height;
-        }
-
-        if (ctx) {
-          ctx.save();
-          
-          // 1. Apply Filter
-          ctx.filter = `contrast(${currentFilters.contrast}%) brightness(${currentFilters.brightness}%) grayscale(${currentFilters.grayscale}%) invert(${currentFilters.invert ? 100 : 0}%)`;
-
-          // 2. Center canvas context
-          ctx.translate(canvas.width / 2, canvas.height / 2);
-          
-          // 3. Rotate
-          ctx.rotate((currentFilters.rotation * Math.PI) / 180);
-          
-          // 4. Flip
-          ctx.scale(currentFilters.flipH ? -1 : 1, currentFilters.flipV ? -1 : 1);
-
-          // 5. Draw Image (centered relative to rotation)
-          // We draw using the scaled dimensions
-          ctx.drawImage(img, -width / 2, -height / 2, width, height);
-          
-          ctx.restore();
-          
-          // Reduce quality to 0.7 to aggressively prevent payload size errors with Gemini
-          resolve(canvas.toDataURL('image/jpeg', 0.70));
-        } else {
-          resolve(originalBase64);
-        }
-      };
-      img.onerror = () => resolve(originalBase64);
-      img.src = originalBase64;
-    });
-  };
-
-  const handleProcess = async () => {
+  const handleProcess = useCallback(async () => {
     if (!selectedFile) return;
     if (!previewUrl && !isConverting && !isHeic) return;
 
-    // If user is in Editor or Source tab, switch to Process tab to show logs
     setActiveLeftTab('process');
-
     setStatus(ExtractionStatus.PROCESSING);
-    addLog(engine === 'PADDLE' ? 'Initializing PaddleOCR container connection...' : 'Initializing Gemini Vision API...', 'INFO');
-    
-    await new Promise(r => setTimeout(r, 500));
+    addLog(
+      engine === 'PADDLE'
+        ? 'Initializing PaddleOCR container connection...'
+        : 'Initializing Gemini Vision API...',
+      'INFO'
+    );
+
+    await new Promise(r => setTimeout(r, PROCESSING_DELAY));
 
     let payloadBase64 = previewUrl;
-    
-    // Check if any modifications exist OR if we need to downscale for API stability
-    // Always running generateProcessedImage ensures we get the downscaled/optimized version
+
     if (previewUrl) {
-        addLog('Optimizing image payload...', 'INFO');
-        try {
-          // Note: If user has already Cropped, previewUrl is the crop. 
-          // Filters are reset, so this just resizes/compresses.
-          // If user has NOT cropped but applied filters, this applies them.
-          payloadBase64 = await generateProcessedImage(previewUrl, filters);
-          addLog('Image optimized for transmission.', 'SUCCESS');
-        } catch (e) {
-          addLog('Optimization failed, using original.', 'WARN');
-        }
+      addLog('Optimizing image payload...', 'INFO');
+      try {
+        payloadBase64 = await generateProcessedImage(previewUrl, filters);
+        addLog('Image optimized for transmission.', 'SUCCESS');
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        addLog(`Optimization failed: ${errorMessage}. Using original.`, 'WARN');
+      }
     } else if (isHeic && !previewUrl) {
-         // HEIC fallback logic
-         addLog('Using raw HEIC file.', 'INFO');
-         try {
-           payloadBase64 = await new Promise<string>((resolve, reject) => {
-             const reader = new FileReader();
-             reader.onload = (e) => resolve(e.target?.result as string);
-             reader.onerror = reject;
-             reader.readAsDataURL(selectedFile);
-           });
-        } catch (e) {
-           addLog('Failed to read file.', 'ERROR');
-           setStatus(ExtractionStatus.ERROR);
-           return;
-        }
+      addLog('Using raw HEIC file.', 'INFO');
+      try {
+        payloadBase64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            if (e.target?.result) {
+              resolve(e.target.result as string);
+            } else {
+              reject(new Error('Failed to read file'));
+            }
+          };
+          reader.onerror = () => reject(new Error('FileReader error'));
+          reader.readAsDataURL(selectedFile);
+        });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        addLog(`Failed to read file: ${errorMessage}`, 'ERROR');
+        setStatus(ExtractionStatus.ERROR);
+        return;
+      }
     }
 
     if (!payloadBase64) {
-      addLog('No payload data.', 'ERROR');
+      addLog('No payload data available.', 'ERROR');
       setStatus(ExtractionStatus.ERROR);
       return;
     }
@@ -250,28 +215,90 @@ const App: React.FC = () => {
     setProcessedImage(payloadBase64);
 
     try {
-      const data = await performOCRExtraction(selectedFile, payloadBase64, (msg) => addLog(msg, 'INFO'), engine);
+      const data = await performOCRExtraction(
+        selectedFile,
+        payloadBase64,
+        (msg) => addLog(msg, 'INFO'),
+        engine
+      );
       setResult(data);
       setStatus(ExtractionStatus.COMPLETE);
       addLog('Extraction successful. Text overlay available in Editor tab.', 'SUCCESS');
-      // Switch to Text mode on success to show user the feature
       setViewMode('text');
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setStatus(ExtractionStatus.ERROR);
-      addLog(`Error: ${error.message}`, 'ERROR');
+      addLog(`Error: ${errorMessage}`, 'ERROR');
     }
-  };
+  }, [selectedFile, previewUrl, isConverting, isHeic, engine, filters, addLog]);
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-  };
+  }, []);
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       processFileSelection(e.dataTransfer.files[0]);
     }
-  };
+  }, [processFileSelection]);
+
+  const handleReset = useCallback(() => {
+    setSelectedFile(null);
+    setResult(null);
+    clearLogs();
+    setStatus(ExtractionStatus.IDLE);
+    resetFilters();
+    setViewState(DEFAULT_VIEW_STATE);
+    setPreviewUrl(null);
+    setProcessedImage(null);
+    setEngine('GEMINI');
+    setActiveLeftTab('source');
+    setViewMode('edit');
+  }, [clearLogs, resetFilters]);
+
+  // Keyboard shortcuts
+  const handleOpenFile = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleToggleHelp = useCallback(() => {
+    setShowHelp(true);
+  }, []);
+
+  const shortcuts = useMemo(() => [
+    {
+      key: 'o',
+      ctrl: true,
+      callback: handleOpenFile,
+      description: 'Open file'
+    },
+    {
+      key: 'r',
+      ctrl: true,
+      callback: handleReset,
+      description: 'Reset workspace'
+    },
+    {
+      key: 'Enter',
+      ctrl: true,
+      callback: handleProcess,
+      description: 'Start processing'
+    },
+    {
+      key: '?',
+      shift: true,
+      callback: handleToggleHelp,
+      description: 'Show help'
+    }
+  ], [handleOpenFile, handleReset, handleProcess, handleToggleHelp]);
+
+  const shortcutsEnabled = useMemo(
+    () => !isConverting && status !== ExtractionStatus.PROCESSING,
+    [isConverting, status]
+  );
+
+  useKeyboardShortcuts(shortcuts, shortcutsEnabled);
 
   return (
     <div className="min-h-screen flex flex-col font-sans text-gray-300 selection:bg-emerald-500/30">
@@ -286,8 +313,18 @@ const App: React.FC = () => {
           <span className="font-bold tracking-tight text-gray-100">Docker<span className="text-emerald-400">OCR</span></span>
         </div>
         <div className="flex items-center space-x-4 text-sm text-gray-400">
-           <span className="flex items-center">
-             <span className={`w-2 h-2 rounded-full mr-2 ${process.env.API_KEY ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+           <button
+             onClick={() => setShowHelp(true)}
+             className="hover:text-emerald-400 transition-colors"
+             title="Help & Shortcuts (Shift + ?)"
+             aria-label="Show help"
+           >
+             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+             </svg>
+           </button>
+           <span className="flex items-center" title={apiKeyConfigured ? 'API Key Configured' : 'API Key Missing'}>
+             <span className={`w-2 h-2 rounded-full mr-2 ${apiKeyConfigured ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
              {engine === 'GEMINI' ? 'Cloud API' : 'Docker Link'}
            </span>
         </div>
@@ -324,21 +361,11 @@ const App: React.FC = () => {
               <IconTabPlay />
               <span>Process</span>
             </button>
-            <button 
-              onClick={() => {
-                setSelectedFile(null);
-                setResult(null);
-                setLogs([]);
-                setStatus(ExtractionStatus.IDLE);
-                setFilters(DEFAULT_FILTERS);
-                setViewState(DEFAULT_VIEW_STATE);
-                setPreviewUrl(null);
-                setProcessedImage(null);
-                setEngine('GEMINI');
-                setActiveLeftTab('source');
-              }}
+            <button
+              onClick={handleReset}
               className="px-3 border-l border-gray-800 text-gray-500 hover:text-emerald-400 hover:bg-gray-800 transition-colors"
-              title="Reset Workspace"
+              title="Reset Workspace (Ctrl+R)"
+              aria-label="Reset Workspace"
             >
               <IconRefresh />
             </button>
@@ -362,19 +389,17 @@ const App: React.FC = () => {
                   `}
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <input 
-                    type="file" 
+                  <input
+                    type="file"
                     ref={fileInputRef}
                     onChange={handleFileSelect}
                     className="hidden"
-                    accept="image/png, image/jpeg, image/heic, .heic"
+                    accept="image/png, image/jpeg, image/jpg, image/heic, .heic, .png, .jpg, .jpeg"
+                    aria-label="Upload image file"
                   />
                   
                   {isConverting ? (
-                      <div className="flex flex-col items-center justify-center space-y-3">
-                        <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                        <p className="text-emerald-400 text-sm font-mono animate-pulse">Converting HEIC...</p>
-                      </div>
+                      <LoadingSpinner message="Converting HEIC..." />
                   ) : previewUrl ? (
                     <div className="relative w-full h-full flex items-center justify-center p-4">
                       <img 
@@ -401,8 +426,10 @@ const App: React.FC = () => {
                       <div className="flex items-center space-x-3">
                         <div className="p-2 bg-gray-800 rounded text-emerald-500"><IconFile /></div>
                         <div>
-                          <p className="text-sm text-gray-200 truncate max-w-[200px]">{selectedFile.name}</p>
-                          <p className="text-xs text-gray-500">{(selectedFile.size / 1024).toFixed(2)} KB</p>
+                          <p className="text-sm text-gray-200 truncate max-w-[200px]" title={selectedFile.name}>
+                            {selectedFile.name}
+                          </p>
+                          <p className="text-xs text-gray-500">{formatFileSize(selectedFile.size)}</p>
                         </div>
                       </div>
                       <button onClick={() => setActiveLeftTab('editor')} className="text-xs bg-emerald-900/30 text-emerald-400 px-3 py-1.5 rounded hover:bg-emerald-900/50 transition-colors border border-emerald-900/50">
@@ -450,7 +477,7 @@ const App: React.FC = () => {
                         filters={filters}
                         zoom={viewState.zoom}
                         offset={viewState.offset}
-                        onViewChange={(zoom, offset) => setViewState({ zoom, offset })}
+                        onViewChange={handleViewChange}
                       />
                    ) : (
                      <div className="text-gray-600 text-sm">No image loaded</div>
@@ -514,7 +541,7 @@ const App: React.FC = () => {
                   >
                     {status === ExtractionStatus.PROCESSING ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                        <LoadingSpinner size="sm" />
                         <span>Extraction Running...</span>
                       </>
                     ) : (
@@ -543,6 +570,9 @@ const App: React.FC = () => {
         </div>
 
       </main>
+
+      {/* Help Modal */}
+      <HelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
     </div>
   );
 };

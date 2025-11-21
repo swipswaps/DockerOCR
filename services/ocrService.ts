@@ -1,18 +1,24 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { OCREngine, OCRResult } from "../types";
+import { requireApiKey } from "../config/env";
+import { GEMINI_MODEL } from "../constants";
 
-// Initialize Gemini
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Initialize Gemini with validated API key
+const getAI = () => {
+  const apiKey = requireApiKey();
+  return new GoogleGenAI({ apiKey });
+};
 
 const performGeminiExtraction = async (
-  file: File, 
+  file: File,
   base64Data: string,
   onLog: (msg: string) => void
 ): Promise<OCRResult> => {
   onLog(`Initializing Gemini 2.5 Flash...`);
-  
-  const model = 'gemini-2.5-flash'; 
-  
+
+  const model = GEMINI_MODEL;
+  const ai = getAI();
+
   onLog(`Selected model: ${model} for high-speed extraction.`);
   onLog(`Uploading ${file.name} (${(file.size / 1024).toFixed(2)} KB)...`);
 
@@ -101,18 +107,21 @@ const performGeminiExtraction = async (
     
     return result;
 
-  } catch (error: any) {
+  } catch (error) {
     console.error(error);
-    
+
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStatus = (error as any)?.status;
+
     // Check for 500 Internal Error or similar API failures
-    if (error.message?.includes('500') || error.status === 500 || error.message?.includes('Internal') || error.message?.includes('Json')) {
+    if (errorMessage.includes('500') || errorStatus === 500 || errorMessage.includes('Internal') || errorMessage.includes('Json')) {
       onLog('WARN: Strict schema failed (API 500/Internal). Retrying with loose JSON mode...');
-      
+
       try {
         const response = await generateRequest(false);
         const text = response.text;
         if (!text) throw new Error("No text returned from fallback");
-        
+
         // Clean markdown formatting if present (e.g. ```json ... ```)
         const cleanText = text.replace(/```json\n?|```/g, '').trim();
         const parsed = JSON.parse(cleanText);
@@ -122,12 +131,13 @@ const performGeminiExtraction = async (
           text: parsed.text || "",
           blocks: parsed.blocks || []
         };
-      } catch (fallbackError: any) {
-        throw new Error(`Fallback failed: ${fallbackError.message}`);
+      } catch (fallbackError) {
+        const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : 'Unknown error';
+        throw new Error(`Fallback failed: ${fallbackMessage}`);
       }
     }
-    
-    throw new Error(error.message || "Gemini extraction failed");
+
+    throw new Error(errorMessage || "Gemini extraction failed");
   }
 };
 
@@ -137,36 +147,73 @@ const performPaddleExtraction = async (
   onLog: (msg: string) => void
 ): Promise<OCRResult> => {
   onLog('Connecting to PaddleOCR container (port 5000)...');
-  
-  // SIMULATION for the web demo
-  await new Promise(r => setTimeout(r, 800));
-  onLog('PP-OCRv4 detection model loaded.');
-  
-  await new Promise(r => setTimeout(r, 1200));
-  onLog('Running classification & text recognition heads...');
-  
-  try {
-     // Use Gemini to generate the "Paddle" result for the purpose of this demo
-     onLog('Processing bounding boxes (dt_boxes)...');
-     const realResult = await performGeminiExtraction(file, base64Data, (msg) => {
-        // Suppress Gemini logs, emit Paddle logs
-     });
-     
-     onLog('PaddleOCR extraction successful.');
-     return realResult;
 
-  } catch (e) {
-     onLog('WARN: Local Docker container/API unreachable. Falling back to simulation.');
-     
-     // Simulation Fallback (if Gemini also fails or for offline demo)
-     return {
-       file: file.name,
-       text: "Simulated PaddleOCR Result\n1. Solar Panels 370W\n2. Inverter Unit",
-       blocks: [
-         { text: "Solar Panels 370W", confidence: 0.98, bbox: [[10,10],[100,10],[100,50],[10,50]] },
-         { text: "Inverter Unit", confidence: 0.95, bbox: [[10,60],[100,60],[100,100],[10,100]] }
-       ]
-     };
+  const paddleEndpoint = 'http://localhost:5000/ocr';
+
+  try {
+    // Extract clean base64 data
+    const cleanBase64 = base64Data.split(',')[1] || base64Data;
+
+    onLog('Sending image to PaddleOCR container...');
+
+    // Make actual HTTP request to PaddleOCR Docker container
+    const response = await fetch(paddleEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        image: cleanBase64,
+        filename: file.name
+      }),
+      signal: AbortSignal.timeout(60000) // 60 second timeout
+    });
+
+    if (!response.ok) {
+      throw new Error(`PaddleOCR API returned ${response.status}: ${response.statusText}`);
+    }
+
+    onLog('PP-OCRv4 detection model loaded.');
+    onLog('Running classification & text recognition heads...');
+
+    const result = await response.json();
+
+    onLog('Processing bounding boxes (dt_boxes)...');
+
+    // Transform PaddleOCR response to our OCRResult format
+    // Expected PaddleOCR response format: { text: string, blocks: Array<{text, confidence, bbox}> }
+    const ocrResult: OCRResult = {
+      file: file.name,
+      text: result.text || result.blocks?.map((b: any) => b.text).join('\n') || '',
+      blocks: result.blocks || []
+    };
+
+    onLog(`PaddleOCR extraction successful. ${ocrResult.blocks.length} blocks detected.`);
+    return ocrResult;
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Check if it's a network/connection error
+    if (errorMessage.includes('fetch') || errorMessage.includes('NetworkError') || errorMessage.includes('Failed to fetch')) {
+      onLog('WARN: PaddleOCR Docker container not reachable. Is it running on port 5000?');
+      onLog('Falling back to Gemini Vision API...');
+
+      try {
+        // Fallback to Gemini
+        const geminiResult = await performGeminiExtraction(file, base64Data, () => {
+          // Suppress Gemini logs in fallback mode
+        });
+
+        onLog('Fallback extraction successful using Gemini.');
+        return geminiResult;
+      } catch (geminiError) {
+        throw new Error('Both PaddleOCR and Gemini fallback failed. Please check Docker container and API key.');
+      }
+    }
+
+    // For other errors, throw them
+    throw new Error(`PaddleOCR extraction failed: ${errorMessage}`);
   }
 };
 

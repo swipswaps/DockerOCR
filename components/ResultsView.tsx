@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { OCRResult } from '../types';
 import { IconCopy, IconCSV, IconDatabase, IconTable } from './Icons';
-// @ts-ignore
 import * as XLSX from 'xlsx';
 
 interface ResultsViewProps {
@@ -13,16 +12,8 @@ type TabType = 'json' | 'text' | 'csv' | 'xlsx' | 'sql';
 const ResultsView: React.FC<ResultsViewProps> = ({ data }) => {
   const [activeTab, setActiveTab] = useState<TabType>('json');
 
-  if (!data) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-gray-500 bg-gray-900 rounded-lg border border-gray-800 border-dashed">
-        <p className="mb-2">No data extracted yet</p>
-        <p className="text-xs text-gray-600">Upload an image to begin analysis</p>
-      </div>
-    );
-  }
-
-  const generateCSV = (result: OCRResult) => {
+  // Helper functions that don't depend on data
+  const generateCSV = useCallback((result: OCRResult) => {
     const headers = ['Text', 'Confidence', 'BBox_X1', 'BBox_Y1', 'BBox_X2', 'BBox_Y2', 'BBox_X3', 'BBox_Y3', 'BBox_X4', 'BBox_Y4'];
     const rows = result.blocks.map(b => {
       // Flatten bounding box coords for CSV compatibility
@@ -31,16 +22,16 @@ const ResultsView: React.FC<ResultsViewProps> = ({ data }) => {
       return [safeText, b.confidence.toFixed(4), ...flatBBox.map(n => n.toString())].join(',');
     });
     return [headers.join(','), ...rows].join('\n');
-  };
+  }, []);
 
-  const generateSQL = (result: OCRResult) => {
+  const generateSQL = useCallback((result: OCRResult) => {
     const tableName = 'ocr_extraction_results';
     const statements = result.blocks.map(b => {
       const safeText = b.text.replace(/'/g, "''"); // Escape single quotes for SQL
       const safeFile = result.file.replace(/'/g, "''");
       return `INSERT INTO ${tableName} (file_name, detected_text, confidence, captured_at) VALUES ('${safeFile}', '${safeText}', ${b.confidence}, NOW());`;
     });
-    
+
     return [
       `CREATE TABLE IF NOT EXISTS ${tableName} (`,
       `  id INT AUTO_INCREMENT PRIMARY KEY,`,
@@ -52,9 +43,11 @@ const ResultsView: React.FC<ResultsViewProps> = ({ data }) => {
       '',
       ...statements
     ].join('\n');
-  };
+  }, []);
 
-  const getDisplayContent = () => {
+  const getDisplayContent = useCallback(() => {
+    if (!data) return '';
+
     switch (activeTab) {
       case 'json':
         return JSON.stringify(data, null, 2);
@@ -67,30 +60,41 @@ const ResultsView: React.FC<ResultsViewProps> = ({ data }) => {
       default:
         return ''; // XLSX is handled separately in render
     }
-  };
+  }, [activeTab, data, generateCSV, generateSQL]);
 
-  const handleCopy = () => {
+  const handleCopy = useCallback(() => {
+    if (!data) return;
+
     const content = getDisplayContent();
     if (activeTab === 'xlsx') {
-      // Logic for copying XLSX table data if needed, usually better to copy visually
-      // For now, we just copy the text representation of the table or CSV as fallback
       navigator.clipboard.writeText(generateCSV(data));
     } else {
       navigator.clipboard.writeText(content);
     }
-  };
+  }, [activeTab, data, getDisplayContent, generateCSV]);
 
-  const downloadXLSX = () => {
+  const downloadXLSX = useCallback(() => {
+    if (!data) return;
+
     const ws = XLSX.utils.json_to_sheet(data.blocks.map(b => ({
       Text: b.text,
       Confidence: b.confidence,
-      // Convert array of arrays to string for Excel cell
       BoundingBox: JSON.stringify(b.bbox)
     })));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "OCR Data");
     XLSX.writeFile(wb, `${data.file.split('.')[0]}_ocr_data.xlsx`);
-  };
+  }, [data]);
+
+  // Early return AFTER all hooks are called
+  if (!data) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-gray-500 bg-gray-900 rounded-lg border border-gray-800 border-dashed">
+        <p className="mb-2">No data extracted yet</p>
+        <p className="text-xs text-gray-600">Upload an image to begin analysis</p>
+      </div>
+    );
+  }
 
   const renderTabButton = (type: TabType, label: string, Icon?: React.FC) => (
     <button

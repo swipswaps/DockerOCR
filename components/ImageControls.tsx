@@ -28,8 +28,7 @@ const ImageControls: React.FC<ImageControlsProps> = ({ filters, onChange, disabl
     });
   };
 
-  const toggleBoolean = (key: keyof ImageFilters) => {
-    // @ts-ignore
+  const toggleBoolean = (key: 'flipH' | 'flipV' | 'invert') => {
     handleChange(key, !filters[key]);
   };
 
