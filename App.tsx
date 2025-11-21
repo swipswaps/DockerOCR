@@ -9,6 +9,7 @@ import TextOverlay from './components/TextOverlay';
 import ImagePreview, { ImagePreviewRef } from './components/ImagePreview';
 import LoadingSpinner from './components/LoadingSpinner';
 import HelpModal from './components/HelpModal';
+import DockerSetupHelper from './components/DockerSetupHelper';
 import { performOCRExtraction } from './services/ocrService';
 import { DEFAULT_VIEW_STATE, PROCESSING_DELAY } from './constants';
 import { useImageFilters } from './hooks/useImageFilters';
@@ -34,6 +35,7 @@ const App: React.FC = () => {
   const [activeLeftTab, setActiveLeftTab] = useState<LeftTab>('source');
   const [viewMode, setViewMode] = useState<ViewMode>('edit');
   const [showHelp, setShowHelp] = useState(false);
+  const [showDockerSetup, setShowDockerSetup] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imagePreviewRef = useRef<ImagePreviewRef>(null);
@@ -219,7 +221,13 @@ const App: React.FC = () => {
         selectedFile,
         payloadBase64,
         (msg) => addLog(msg, 'INFO'),
-        engine
+        engine,
+        () => {
+          // Docker error callback - show setup helper
+          if (engine === 'PADDLE') {
+            setShowDockerSetup(true);
+          }
+        }
       );
       setResult(data);
       setStatus(ExtractionStatus.COMPLETE);
@@ -227,6 +235,15 @@ const App: React.FC = () => {
       setViewMode('text');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      // Show Docker setup helper for Docker-specific errors
+      if (engine === 'PADDLE' && (errorMessage === 'DOCKER_NOT_READY' || errorMessage === 'DOCKER_NOT_AVAILABLE')) {
+        setShowDockerSetup(true);
+        setStatus(ExtractionStatus.ERROR);
+        addLog('⚠️ PaddleOCR container setup required. Click "Setup Docker" for instructions.', 'ERROR');
+        return;
+      }
+
       setStatus(ExtractionStatus.ERROR);
       addLog(`Error: ${errorMessage}`, 'ERROR');
     }
@@ -532,7 +549,7 @@ const App: React.FC = () => {
                     className={`
                       w-full flex items-center justify-center space-x-2 px-6 py-3.5 rounded-lg font-bold text-sm transition-all uppercase tracking-wider
                       ${!selectedFile || isConverting
-                        ? 'bg-gray-800 text-gray-500 cursor-not-allowed' 
+                        ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
                         : status === ExtractionStatus.PROCESSING
                           ? 'bg-emerald-900/20 text-emerald-500 border border-emerald-900/50 cursor-wait'
                           : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_25px_rgba(16,185,129,0.5)]'
@@ -551,6 +568,17 @@ const App: React.FC = () => {
                       </>
                     )}
                   </button>
+
+                  {/* Docker Setup Button (only show for PaddleOCR) */}
+                  {engine === 'PADDLE' && (
+                    <button
+                      onClick={() => setShowDockerSetup(true)}
+                      className="w-full flex items-center justify-center space-x-2 px-4 py-2 rounded-lg text-xs border border-gray-700 hover:border-blue-600 hover:bg-blue-900/20 text-gray-400 hover:text-blue-400 transition-all"
+                    >
+                      <span>🐳</span>
+                      <span>Setup Docker</span>
+                    </button>
+                  )}
                 </div>
 
                 <div className="flex-1 relative min-h-0">
@@ -573,6 +601,14 @@ const App: React.FC = () => {
 
       {/* Help Modal */}
       <HelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
+
+      {/* Docker Setup Helper */}
+      {showDockerSetup && (
+        <DockerSetupHelper
+          onClose={() => setShowDockerSetup(false)}
+          onRetry={handleProcess}
+        />
+      )}
     </div>
   );
 };

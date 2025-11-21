@@ -2,6 +2,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { OCREngine, OCRResult } from "../types";
 import { requireApiKey } from "../config/env";
 import { GEMINI_MODEL } from "../constants";
+import { checkContainerHealth } from "./dockerService";
 
 // Initialize Gemini with validated API key
 const getAI = () => {
@@ -144,8 +145,41 @@ const performGeminiExtraction = async (
 const performPaddleExtraction = async (
   file: File,
   base64Data: string,
-  onLog: (msg: string) => void
+  onLog: (msg: string) => void,
+  onDockerError?: () => void
 ): Promise<OCRResult> => {
+  onLog('🔍 Checking PaddleOCR container health...');
+
+  // Self-healing: Check container health first
+  const healthStatus = await checkContainerHealth();
+
+  if (!healthStatus.containerHealthy) {
+    onLog(`⚠️ ${healthStatus.message}`);
+
+    if (healthStatus.canAutoFix) {
+      onLog('🔧 Container may be starting. Waiting 10 seconds...');
+      await new Promise(resolve => setTimeout(resolve, 10000));
+
+      // Check again after waiting
+      const retryStatus = await checkContainerHealth();
+      if (!retryStatus.containerHealthy) {
+        onLog('❌ Container still not ready');
+        if (onDockerError) {
+          onDockerError();
+        }
+        throw new Error('DOCKER_NOT_READY');
+      }
+      onLog('✅ Container is now healthy!');
+    } else {
+      onLog('❌ Docker not available. Please start the container.');
+      if (onDockerError) {
+        onDockerError();
+      }
+      throw new Error('DOCKER_NOT_AVAILABLE');
+    }
+  }
+
+  onLog('✅ PaddleOCR container is healthy');
   onLog('Connecting to PaddleOCR container (port 5000)...');
 
   const paddleEndpoint = 'http://localhost:5000/ocr';
@@ -194,18 +228,29 @@ const performPaddleExtraction = async (
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
 
+    // Don't fallback if it's a Docker setup issue - let the UI handle it
+    if (errorMessage === 'DOCKER_NOT_READY' || errorMessage === 'DOCKER_NOT_AVAILABLE') {
+      throw error;
+    }
+
     // Check if it's a network/connection error
     if (errorMessage.includes('fetch') || errorMessage.includes('NetworkError') || errorMessage.includes('Failed to fetch')) {
-      onLog('WARN: PaddleOCR Docker container not reachable. Is it running on port 5000?');
-      onLog('Falling back to Gemini Vision API...');
+      onLog('⚠️ WARN: PaddleOCR Docker container not reachable');
+
+      // Trigger Docker setup helper
+      if (onDockerError) {
+        onDockerError();
+      }
+
+      onLog('🔄 Falling back to Gemini Vision API...');
 
       try {
         // Fallback to Gemini
-        const geminiResult = await performGeminiExtraction(file, base64Data, () => {
-          // Suppress Gemini logs in fallback mode
+        const geminiResult = await performGeminiExtraction(file, base64Data, (msg) => {
+          onLog(`[Gemini Fallback] ${msg}`);
         });
 
-        onLog('Fallback extraction successful using Gemini.');
+        onLog('✅ Fallback extraction successful using Gemini.');
         return geminiResult;
       } catch (geminiError) {
         throw new Error('Both PaddleOCR and Gemini fallback failed. Please check Docker container and API key.');
@@ -218,13 +263,14 @@ const performPaddleExtraction = async (
 };
 
 export const performOCRExtraction = async (
-  file: File, 
+  file: File,
   base64Data: string,
   onLog: (msg: string) => void,
-  engine: OCREngine = 'GEMINI'
+  engine: OCREngine = 'GEMINI',
+  onDockerError?: () => void
 ): Promise<OCRResult> => {
   if (engine === 'PADDLE') {
-    return performPaddleExtraction(file, base64Data, onLog);
+    return performPaddleExtraction(file, base64Data, onLog, onDockerError);
   } else {
     return performGeminiExtraction(file, base64Data, onLog);
   }
