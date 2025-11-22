@@ -11,10 +11,13 @@ export const generateProcessedImage = async (
   return new Promise((resolve, reject) => {
     const img = new Image();
 
+    // Set crossOrigin to allow canvas manipulation
+    img.crossOrigin = 'anonymous';
+
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: false });
 
         if (!ctx) {
           throw new Error('Failed to get canvas context');
@@ -61,18 +64,21 @@ export const generateProcessedImage = async (
 
         const result = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
         console.log(`[generateProcessedImage] Generated rotated image: ${result.substring(0, 50)}...`);
+        console.log(`[generateProcessedImage] Result size: ${Math.round(result.length / 1024)}KB`);
 
         resolve(result);
       } catch (error) {
-        console.error('[generateProcessedImage] Error:', error);
+        console.error('[generateProcessedImage] Error during canvas processing:', error);
         reject(error);
       }
     };
 
     img.onerror = (e) => {
       console.error('[generateProcessedImage] Image load error:', e);
-      reject(new Error('Failed to load image'));
+      reject(new Error('Failed to load image for processing'));
     };
+
+    // Set src last to trigger load
     img.src = originalBase64;
   });
 };

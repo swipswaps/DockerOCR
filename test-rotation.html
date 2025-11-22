@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Image Rotation</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 20px; background: #2a2a2a; border-radius: 8px; }
+        button { padding: 10px 20px; margin: 5px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #059669; }
+        img { max-width: 100%; border: 2px solid #444; margin: 10px 0; }
+        .info { background: #1e3a8a; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        input[type="file"] { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Test Image Rotation for OCR</h1>
+        
+        <div class="section">
+            <h2>1. Upload Image</h2>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+        
+        <div class="section">
+            <h2>2. Original Image</h2>
+            <div id="originalInfo" class="info">No image loaded</div>
+            <img id="originalImage" style="display:none;">
+        </div>
+        
+        <div class="section">
+            <h2>3. Rotate Image</h2>
+            <button onclick="rotateImage(0)">0° (Original)</button>
+            <button onclick="rotateImage(90)">90° (Right)</button>
+            <button onclick="rotateImage(180)">180° (Upside Down)</button>
+            <button onclick="rotateImage(270)">270° (Left)</button>
+            <div id="rotatedInfo" class="info">Click a button to rotate</div>
+            <img id="rotatedImage" style="display:none;">
+        </div>
+        
+        <div class="section">
+            <h2>4. Download Rotated Image</h2>
+            <p>Right-click the rotated image above and "Save image as..." to verify it's actually rotated</p>
+            <button onclick="downloadRotated()">Download Rotated Image</button>
+        </div>
+    </div>
+
+    <script>
+        let originalBase64 = null;
+        
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                originalBase64 = event.target.result;
+                const img = document.getElementById('originalImage');
+                img.src = originalBase64;
+                img.style.display = 'block';
+                
+                const tempImg = new Image();
+                tempImg.onload = function() {
+                    document.getElementById('originalInfo').textContent = 
+                        `Loaded: ${file.name} (${tempImg.width}x${tempImg.height})`;
+                };
+                tempImg.src = originalBase64;
+            };
+            reader.readAsDataURL(file);
+        });
+        
+        function rotateImage(rotation) {
+            if (!originalBase64) {
+                alert('Please upload an image first');
+                return;
+            }
+            
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                const width = img.width;
+                const height = img.height;
+                
+                // Swap dimensions for 90/270 degree rotations
+                if (rotation % 180 !== 0) {
+                    canvas.width = height;
+                    canvas.height = width;
+                } else {
+                    canvas.width = width;
+                    canvas.height = height;
+                }
+                
+                console.log(`Rotating ${rotation}°: ${width}x${height} → ${canvas.width}x${canvas.height}`);
+                
+                ctx.save();
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.rotate((rotation * Math.PI) / 180);
+                ctx.drawImage(img, -width / 2, -height / 2, width, height);
+                ctx.restore();
+                
+                const rotatedBase64 = canvas.toDataURL('image/jpeg', 0.9);
+                const rotatedImg = document.getElementById('rotatedImage');
+                rotatedImg.src = rotatedBase64;
+                rotatedImg.style.display = 'block';
+                
+                document.getElementById('rotatedInfo').textContent = 
+                    `Rotated ${rotation}°: ${canvas.width}x${canvas.height} (${Math.round(rotatedBase64.length / 1024)}KB)`;
+            };
+            
+            img.src = originalBase64;
+        }
+        
+        function downloadRotated() {
+            const img = document.getElementById('rotatedImage');
+            if (!img.src || img.style.display === 'none') {
+                alert('Please rotate an image first');
+                return;
+            }
+            
+            const link = document.createElement('a');
+            link.download = 'rotated-image.jpg';
+            link.href = img.src;
+            link.click();
+        }
+    </script>
+</body>
+</html>
+
