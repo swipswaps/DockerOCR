@@ -3,7 +3,7 @@ import { OCREngine, OCRResult } from "../types";
 import { requireApiKey } from "../config/env";
 import { GEMINI_MODEL } from "../constants";
 import { checkContainerHealth } from "./dockerService";
-import { pollDockerLogs, formatDockerLog, isErrorLog } from "./dockerLogService";
+import { pollDockerLogs, formatDockerLog } from "./dockerLogService";
 
 // Initialize Gemini with validated API key
 const getAI = () => {
@@ -189,18 +189,16 @@ const performPaddleExtraction = async (
   const cleanBase64 = base64Data.split(',')[1] || base64Data;
 
   onLog('Sending image to PaddleOCR container...');
+  onLog('📡 Streaming Docker container logs...');
 
   // Start polling Docker logs for real-time progress
   const stopPolling = pollDockerLogs((newLogs) => {
     newLogs.forEach(log => {
+      // Show ALL Docker logs verbatim
       const formattedLog = formatDockerLog(log);
-      if (isErrorLog(log)) {
-        onLog(formattedLog); // Show errors immediately
-      } else {
-        onLog(formattedLog); // Show all logs
-      }
+      onLog(formattedLog);
     });
-  }, 1000); // Poll every 1 second
+  }, 500); // Poll every 500ms for faster updates
 
   try {
     // Make actual HTTP request to PaddleOCR Docker container
@@ -226,13 +224,26 @@ const performPaddleExtraction = async (
         const errorData = await response.json();
         if (errorData.error_type) {
           errorDetails = `${errorData.error_type}: ${errorData.error}`;
+
+          onLog('❌ ═══════════════════════════════════════════════════');
+          onLog(`❌ ERROR: ${errorData.error_type}`);
+          onLog(`❌ MESSAGE: ${errorData.error}`);
+
           if (errorData.hint) {
-            onLog(`⚠️ ${errorData.hint}`);
+            onLog(`💡 HINT: ${errorData.hint}`);
           }
+
           if (errorData.traceback) {
-            // Log first few lines of traceback
-            const traceLines = errorData.traceback.split('\n').slice(0, 5);
-            traceLines.forEach((line: string) => onLog(`  ${line}`));
+            onLog('📋 FULL DOCKER TRACEBACK:');
+            onLog('─────────────────────────────────────────────────');
+            // Show FULL traceback verbatim
+            const traceLines = errorData.traceback.split('\n');
+            traceLines.forEach((line: string) => {
+              if (line.trim()) {
+                onLog(line);
+              }
+            });
+            onLog('═══════════════════════════════════════════════════');
           }
         } else {
           errorDetails = errorData.error || response.statusText;
@@ -240,7 +251,7 @@ const performPaddleExtraction = async (
       } catch {
         errorDetails = response.statusText;
       }
-      throw new Error(`PaddleOCR API returned ${response.status}: ${errorDetails}`);
+      throw new Error(`${errorDetails}`);
     }
 
     const result = await response.json();

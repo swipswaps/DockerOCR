@@ -77,48 +77,83 @@ def perform_ocr():
     Expects JSON: { "image": "base64_string", "filename": "optional_name" }
     Returns: { "text": "full_text", "blocks": [...] }
     """
+    import time
+    start_time = time.time()
+
     try:
+        logger.info("═══════════════════════════════════════════════════")
+        logger.info("🚀 NEW OCR REQUEST RECEIVED")
+        logger.info("═══════════════════════════════════════════════════")
+
         data = request.get_json()
-        
+
         if not data or 'image' not in data:
+            logger.error("❌ No image data provided in request")
             return jsonify({'error': 'No image data provided'}), 400
-        
-        # Decode base64 image
-        image_data = base64.b64decode(data['image'])
-        image = Image.open(io.BytesIO(image_data))
-        
-        # Convert to RGB if necessary
-        if image.mode != 'RGB':
-            image = image.convert('RGB')
-        
+
         filename = data.get('filename', 'unknown')
         logger.info(f"📥 Processing image: {filename}")
+        logger.info(f"📊 Base64 data size: {len(data['image'])} bytes")
+
+        # Decode base64 image
+        logger.info("🔓 Decoding base64 image data...")
+        image_data = base64.b64decode(data['image'])
+        logger.info(f"✅ Decoded {len(image_data)} bytes")
+
+        logger.info("🖼️  Opening image with PIL...")
+        image = Image.open(io.BytesIO(image_data))
+        logger.info(f"✅ Image opened: {image.size}, mode: {image.mode}")
+
+        # Convert to RGB if necessary
+        if image.mode != 'RGB':
+            logger.info(f"🔄 Converting from {image.mode} to RGB...")
+            image = image.convert('RGB')
+            logger.info("✅ Converted to RGB")
 
         # Perform OCR using the new predict() API
         # Convert PIL Image to numpy array
+        logger.info("🔢 Converting PIL Image to numpy array...")
         image_np = np.array(image)
+        logger.info(f"✅ Numpy array created: shape={image_np.shape}, dtype={image_np.dtype}")
 
-        logger.info(f"📐 Image shape: {image_np.shape}, dtype: {image_np.dtype}")
-        logger.info(f"🔄 Starting PaddleOCR detection...")
+        logger.info("─────────────────────────────────────────────────")
+        logger.info("🔄 STARTING PADDLEOCR PROCESSING")
+        logger.info("─────────────────────────────────────────────────")
 
         try:
             # Use the older ocr() API which is more stable
-            logger.info(f"🚀 Loading PP-OCRv4 detection model...")
+            logger.info("🚀 Loading PP-OCRv4 detection model...")
+            logger.info("⏳ This may take a moment on first run or with large images...")
+
             result = ocr.ocr(image_np, cls=True)
-            logger.info(f"✅ PaddleOCR detection complete")
+
+            elapsed = time.time() - start_time
+            logger.info(f"✅ PaddleOCR detection complete in {elapsed:.2f}s")
 
             # Debug: Log the result structure
-            logger.info(f"📊 PaddleOCR result type: {type(result)}, length: {len(result) if result else 0}")
+            logger.info(f"📊 Result type: {type(result)}, length: {len(result) if result else 0}")
             if result and len(result) > 0:
                 logger.info(f"📄 First page has {len(result[0])} text lines")
-                logger.info(f"🔍 Running classification & text recognition heads...")
+                logger.info("🔍 Running classification & text recognition heads...")
         except Exception as e:
-            logger.error(f"PaddleOCR ocr() failed: {type(e).__name__}: {str(e)}")
+            elapsed = time.time() - start_time
+            logger.error("═══════════════════════════════════════════════════")
+            logger.error(f"❌ PADDLEOCR FAILED after {elapsed:.2f}s")
+            logger.error(f"❌ Error type: {type(e).__name__}")
+            logger.error(f"❌ Error message: {str(e)}")
+            logger.error("═══════════════════════════════════════════════════")
             import traceback
-            logger.error(traceback.format_exc())
+            full_traceback = traceback.format_exc()
+            logger.error("📋 FULL TRACEBACK:")
+            logger.error(full_traceback)
+            logger.error("═══════════════════════════════════════════════════")
             raise
 
         # Transform PaddleOCR result to our format
+        logger.info("─────────────────────────────────────────────────")
+        logger.info("📦 TRANSFORMING RESULTS")
+        logger.info("─────────────────────────────────────────────────")
+
         blocks = []
         full_text_lines = []
 
@@ -128,8 +163,8 @@ def perform_ocr():
             page_result = result[0]  # Get first page
 
             if page_result:
-                logger.info(f"📦 Processing bounding boxes (dt_boxes)...")
-                logger.info(f"✅ Found {len(page_result)} text blocks")
+                logger.info(f"📦 Processing {len(page_result)} bounding boxes...")
+                logger.info(f"🔍 Extracting text and confidence scores...")
 
                 for line in page_result:
                     # line[0] = bbox coordinates [[x1,y1], [x2,y2], [x3,y3], [x4,y4]]
@@ -158,21 +193,34 @@ def perform_ocr():
         # Combine all text
         full_text = '\n'.join(full_text_lines)
 
-        logger.info(f"✅ PaddleOCR extraction successful. {len(blocks)} blocks detected.")
-        
+        total_elapsed = time.time() - start_time
+        logger.info("═══════════════════════════════════════════════════")
+        logger.info(f"✅ SUCCESS: Extracted {len(blocks)} text blocks")
+        logger.info(f"⏱️  Total processing time: {total_elapsed:.2f}s")
+        logger.info("═══════════════════════════════════════════════════")
+
         return jsonify({
             'text': full_text,
             'blocks': blocks,
             'filename': filename
         }), 200
-        
+
     except Exception as e:
         error_type = type(e).__name__
         error_msg = str(e)
-        logger.error(f"OCR error: {error_type}: {error_msg}")
+        total_elapsed = time.time() - start_time
+
+        logger.error("═══════════════════════════════════════════════════")
+        logger.error(f"❌ EXCEPTION CAUGHT after {total_elapsed:.2f}s")
+        logger.error(f"❌ Error type: {error_type}")
+        logger.error(f"❌ Error message: {error_msg}")
+        logger.error("═══════════════════════════════════════════════════")
+
         import traceback
         full_traceback = traceback.format_exc()
-        logger.error(f"Full traceback:\n{full_traceback}")
+        logger.error("📋 FULL EXCEPTION TRACEBACK:")
+        logger.error(full_traceback)
+        logger.error("═══════════════════════════════════════════════════")
 
         # Return detailed error information to frontend
         return jsonify({
