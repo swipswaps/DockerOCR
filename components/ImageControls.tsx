@@ -61,22 +61,29 @@ const ImageControls: React.FC<ImageControlsProps> = ({ filters, onChange, disabl
       </div>
 
       {/* Transforms Toolbar */}
-      <div className="grid grid-cols-5 gap-2">
-        <button onClick={rotateLeft} disabled={disabled} className="tool-btn group" title="Rotate Left">
-          <div className="transform -scale-x-100"><IconRotate /></div>
-        </button>
-        <button onClick={rotateRight} disabled={disabled} className="tool-btn" title="Rotate Right">
-          <IconRotate />
-        </button>
-        <button onClick={() => toggleBoolean('flipH')} disabled={disabled} className={`tool-btn ${filters.flipH ? 'bg-emerald-900/50 text-emerald-400 border-emerald-700' : ''}`} title="Flip Horizontal">
-          <IconFlipH />
-        </button>
-        <button onClick={() => toggleBoolean('flipV')} disabled={disabled} className={`tool-btn ${filters.flipV ? 'bg-emerald-900/50 text-emerald-400 border-emerald-700' : ''}`} title="Flip Vertical">
-          <IconFlipV />
-        </button>
-        <button onClick={() => toggleBoolean('invert')} disabled={disabled} className={`tool-btn ${filters.invert ? 'bg-emerald-900/50 text-emerald-400 border-emerald-700' : ''}`} title="Invert Colors">
-          <IconInvert />
-        </button>
+      <div className="space-y-2">
+        <div className="grid grid-cols-5 gap-2">
+          <button onClick={rotateLeft} disabled={disabled} className="tool-btn group" title="Rotate Left (90°) - Applied before OCR">
+            <div className="transform -scale-x-100"><IconRotate /></div>
+          </button>
+          <button onClick={rotateRight} disabled={disabled} className="tool-btn" title="Rotate Right (90°) - Applied before OCR">
+            <IconRotate />
+          </button>
+          <button onClick={() => toggleBoolean('flipH')} disabled={disabled} className={`tool-btn ${filters.flipH ? 'bg-emerald-900/50 text-emerald-400 border-emerald-700' : ''}`} title="Flip Horizontal">
+            <IconFlipH />
+          </button>
+          <button onClick={() => toggleBoolean('flipV')} disabled={disabled} className={`tool-btn ${filters.flipV ? 'bg-emerald-900/50 text-emerald-400 border-emerald-700' : ''}`} title="Flip Vertical">
+            <IconFlipV />
+          </button>
+          <button onClick={() => toggleBoolean('invert')} disabled={disabled} className={`tool-btn ${filters.invert ? 'bg-emerald-900/50 text-emerald-400 border-emerald-700' : ''}`} title="Invert Colors">
+            <IconInvert />
+          </button>
+        </div>
+        {filters.rotation !== 0 && (
+          <div className="text-center text-xs text-emerald-400 font-medium bg-emerald-900/20 border border-emerald-700/30 rounded px-2 py-1">
+            🔄 Rotated {filters.rotation}° (will be applied to OCR)
+          </div>
+        )}
       </div>
 
       <div className="space-y-4 pt-2 border-t border-gray-800/50">

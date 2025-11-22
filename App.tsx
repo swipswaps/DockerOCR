@@ -180,6 +180,15 @@ const App: React.FC = () => {
       addLog('Optimizing image payload...', 'INFO');
       try {
         payloadBase64 = await generateProcessedImage(previewUrl, filters);
+
+        // Log rotation info if image was rotated
+        if (filters.rotation !== 0) {
+          addLog(`✅ Image rotated ${filters.rotation}° before OCR extraction`, 'SUCCESS');
+        }
+        if (filters.flipH || filters.flipV) {
+          addLog(`✅ Image flipped (H:${filters.flipH}, V:${filters.flipV}) before OCR extraction`, 'SUCCESS');
+        }
+
         addLog('Image optimized for transmission.', 'SUCCESS');
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
