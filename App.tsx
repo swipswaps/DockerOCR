@@ -178,8 +178,18 @@ const App: React.FC = () => {
 
     if (previewUrl) {
       addLog('Optimizing image payload...', 'INFO');
+      addLog(`Current filters: rotation=${filters.rotation}°, flipH=${filters.flipH}, flipV=${filters.flipV}`, 'INFO');
+
       try {
+        const originalSize = Math.round(previewUrl.length / 1024);
         payloadBase64 = await generateProcessedImage(previewUrl, filters);
+        const processedSize = Math.round(payloadBase64.length / 1024);
+
+        // Verify the processed image is different from original if rotation/flip applied
+        const hasTransform = filters.rotation !== 0 || filters.flipH || filters.flipV;
+        if (hasTransform && payloadBase64 === previewUrl) {
+          throw new Error('Processed image is identical to original despite transformations');
+        }
 
         // Log rotation info if image was rotated
         if (filters.rotation !== 0) {
@@ -190,9 +200,20 @@ const App: React.FC = () => {
         }
 
         addLog('Image optimized for transmission.', 'SUCCESS');
+        addLog(`Processed image size: ${processedSize}KB (original: ${originalSize}KB)`, 'INFO');
+
+        // Debug: Log first 100 chars of processed image to verify it's different
+        if (hasTransform) {
+          console.log('[DEBUG] Original image start:', previewUrl.substring(0, 100));
+          console.log('[DEBUG] Processed image start:', payloadBase64.substring(0, 100));
+          console.log('[DEBUG] Images are different:', payloadBase64 !== previewUrl);
+        }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        addLog(`Optimization failed: ${errorMessage}. Using original.`, 'WARN');
+        addLog(`⚠️ Optimization failed: ${errorMessage}. Using original.`, 'ERROR');
+        console.error('generateProcessedImage error:', error);
+        // Fall back to original
+        payloadBase64 = previewUrl;
       }
     } else if (isHeic && !previewUrl) {
       addLog('Using raw HEIC file.', 'INFO');

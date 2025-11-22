@@ -10,12 +10,12 @@ export const generateProcessedImage = async (
 ): Promise<string> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    
+
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        
+
         if (!ctx) {
           throw new Error('Failed to get canvas context');
         }
@@ -26,6 +26,7 @@ export const generateProcessedImage = async (
         const height = img.height * scale;
 
         // Determine canvas size based on rotation
+        // For 90° and 270° rotations, swap width and height
         if (currentFilters.rotation % 180 !== 0) {
           canvas.width = height;
           canvas.height = width;
@@ -34,35 +35,44 @@ export const generateProcessedImage = async (
           canvas.height = height;
         }
 
+        console.log(`[generateProcessedImage] Original: ${img.width}x${img.height}, Scaled: ${width}x${height}, Canvas: ${canvas.width}x${canvas.height}, Rotation: ${currentFilters.rotation}°`);
+
         ctx.save();
-        
-        // Apply filters
+
+        // Apply CSS filters (contrast, brightness, grayscale, invert)
         ctx.filter = buildFilterString(currentFilters);
 
-        // Center canvas context
+        // Center canvas context at the middle of the canvas
         ctx.translate(canvas.width / 2, canvas.height / 2);
-        
-        // Rotate
+
+        // Apply rotation transformation
         ctx.rotate((currentFilters.rotation * Math.PI) / 180);
-        
-        // Flip
+
+        // Apply flip transformations
         ctx.scale(
           currentFilters.flipH ? -1 : 1,
           currentFilters.flipV ? -1 : 1
         );
 
-        // Draw image centered
+        // Draw image centered at origin (which is now at canvas center due to translate)
         ctx.drawImage(img, -width / 2, -height / 2, width, height);
-        
+
         ctx.restore();
-        
-        resolve(canvas.toDataURL('image/jpeg', IMAGE_QUALITY));
+
+        const result = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
+        console.log(`[generateProcessedImage] Generated rotated image: ${result.substring(0, 50)}...`);
+
+        resolve(result);
       } catch (error) {
+        console.error('[generateProcessedImage] Error:', error);
         reject(error);
       }
     };
-    
-    img.onerror = () => reject(new Error('Failed to load image'));
+
+    img.onerror = (e) => {
+      console.error('[generateProcessedImage] Image load error:', e);
+      reject(new Error('Failed to load image'));
+    };
     img.src = originalBase64;
   });
 };
