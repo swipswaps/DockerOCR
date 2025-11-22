@@ -4,9 +4,15 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
+
+    // Use repository name as base for GitHub Pages
+    // Set to '/' for local development
+    const base = mode === 'production'
+      ? '/DockerOCR/'  // GitHub Pages: https://swipswaps.github.io/DockerOCR/
+      : '/';
+
     return {
-      // GitHub Pages uses /DockerOCR/ as the base path
-      base: '/DockerOCR/',
+      base,
       server: {
         port: 3000,
         host: '0.0.0.0',
