@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 
 /**
  * This test verifies GitHub Pages settings and guides you through the fix
