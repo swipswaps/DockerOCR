@@ -11,10 +11,10 @@
   },
   "dependencies": {
     "@google/genai": "^1.30.0",
+    "exceljs": "^4.4.0",
     "heic2any": "^0.0.4",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "xlsx": "^0.18.5"
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",

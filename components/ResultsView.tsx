@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { OCRResult } from '../types';
 import { IconCopy, IconCSV, IconDatabase, IconTable } from './Icons';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 interface ResultsViewProps {
   data: OCRResult | null;
@@ -73,17 +73,48 @@ const ResultsView: React.FC<ResultsViewProps> = ({ data }) => {
     }
   }, [activeTab, data, getDisplayContent, generateCSV]);
 
-  const downloadXLSX = useCallback(() => {
+  const downloadXLSX = useCallback(async () => {
     if (!data) return;
 
-    const ws = XLSX.utils.json_to_sheet(data.blocks.map(b => ({
-      Text: b.text,
-      Confidence: b.confidence,
-      BoundingBox: JSON.stringify(b.bbox)
-    })));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "OCR Data");
-    XLSX.writeFile(wb, `${data.file.split('.')[0]}_ocr_data.xlsx`);
+    // Create a new workbook and worksheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('OCR Data');
+
+    // Define columns with headers
+    worksheet.columns = [
+      { header: 'Text', key: 'text', width: 50 },
+      { header: 'Confidence', key: 'confidence', width: 15 },
+      { header: 'BoundingBox', key: 'bbox', width: 30 }
+    ];
+
+    // Add data rows
+    data.blocks.forEach(block => {
+      worksheet.addRow({
+        text: block.text,
+        confidence: block.confidence,
+        bbox: JSON.stringify(block.bbox)
+      });
+    });
+
+    // Style the header row
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF10B981' } // Emerald color
+    };
+
+    // Generate and download the file
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${data.file.split('.')[0]}_ocr_data.xlsx`;
+    link.click();
+    URL.revokeObjectURL(url);
   }, [data]);
 
   // Early return AFTER all hooks are called
