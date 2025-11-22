@@ -174,54 +174,67 @@ const App: React.FC = () => {
 
     await new Promise(r => setTimeout(r, PROCESSING_DELAY));
 
-    let payloadBase64 = previewUrl;
+    let payloadBase64: string | null = null;
 
+    // For HEIC files, ALWAYS use the converted previewUrl (never raw HEIC)
+    // For other files, use previewUrl if available, otherwise read the file
     if (previewUrl) {
-      addLog('Optimizing image payload...', 'INFO');
-      addLog(`Current filters: rotation=${filters.rotation}°, flipH=${filters.flipH}, flipV=${filters.flipV}`, 'INFO');
+      // We have a preview URL (either from HEIC conversion or regular image load)
+      const hasTransform = filters.rotation !== 0 || filters.flipH || filters.flipV;
 
-      try {
-        const originalSize = Math.round(previewUrl.length / 1024);
-        payloadBase64 = await generateProcessedImage(previewUrl, filters);
-        const processedSize = Math.round(payloadBase64.length / 1024);
+      if (hasTransform) {
+        // User has applied transformations - process the image
+        addLog('Applying transformations to image...', 'INFO');
+        addLog(`Current filters: rotation=${filters.rotation}°, flipH=${filters.flipH}, flipV=${filters.flipV}`, 'INFO');
 
-        // Verify the processed image is different from original if rotation/flip applied
-        const hasTransform = filters.rotation !== 0 || filters.flipH || filters.flipV;
-        if (hasTransform && payloadBase64 === previewUrl) {
-          throw new Error('Processed image is identical to original despite transformations');
-        }
+        try {
+          const originalSize = Math.round(previewUrl.length / 1024);
+          payloadBase64 = await generateProcessedImage(previewUrl, filters);
+          const processedSize = Math.round(payloadBase64.length / 1024);
 
-        // Log rotation info if image was rotated
-        if (filters.rotation !== 0) {
-          addLog(`✅ Image rotated ${filters.rotation}° before OCR extraction`, 'SUCCESS');
-        }
-        if (filters.flipH || filters.flipV) {
-          addLog(`✅ Image flipped (H:${filters.flipH}, V:${filters.flipV}) before OCR extraction`, 'SUCCESS');
-        }
+          // Verify the processed image is different from original
+          if (payloadBase64 === previewUrl) {
+            throw new Error('Processed image is identical to original despite transformations');
+          }
 
-        addLog('Image optimized for transmission.', 'SUCCESS');
-        addLog(`Processed image size: ${processedSize}KB (original: ${originalSize}KB)`, 'INFO');
+          // Log transformation info
+          if (filters.rotation !== 0) {
+            addLog(`✅ Image rotated ${filters.rotation}° before OCR extraction`, 'SUCCESS');
+          }
+          if (filters.flipH || filters.flipV) {
+            addLog(`✅ Image flipped (H:${filters.flipH}, V:${filters.flipV}) before OCR extraction`, 'SUCCESS');
+          }
 
-        // Debug: Log first 100 chars of processed image to verify it's different
-        if (hasTransform) {
+          addLog('Image transformations applied.', 'SUCCESS');
+          addLog(`Processed image size: ${processedSize}KB (original: ${originalSize}KB)`, 'INFO');
+
+          // Debug logging
           console.log('[DEBUG] Original image start:', previewUrl.substring(0, 100));
           console.log('[DEBUG] Processed image start:', payloadBase64.substring(0, 100));
           console.log('[DEBUG] Images are different:', payloadBase64 !== previewUrl);
-
-          // Offer to download processed image for verification
-          addLog('💾 Tip: Check browser console to verify rotation was applied', 'INFO');
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          addLog(`⚠️ Transformation failed: ${errorMessage}. Using original.`, 'ERROR');
+          console.error('generateProcessedImage error:', error);
+          // Fall back to original
+          payloadBase64 = previewUrl;
         }
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        addLog(`⚠️ Optimization failed: ${errorMessage}. Using original.`, 'ERROR');
-        console.error('generateProcessedImage error:', error);
-        // Fall back to original
+      } else {
+        // No transformations - use preview directly
+        addLog('Using preview image (no transformations applied).', 'INFO');
         payloadBase64 = previewUrl;
       }
     } else if (isHeic && !previewUrl) {
-      addLog('Using raw HEIC file.', 'INFO');
+      // HEIC file without preview - conversion failed or still in progress
+      addLog('❌ Cannot process HEIC file: preview not available.', 'ERROR');
+      addLog('Please wait for HEIC conversion to complete before extracting.', 'ERROR');
+      setStatus(ExtractionStatus.ERROR);
+      return;
+    } else {
+      // No preview available for non-HEIC file - read the original file
+      addLog('Reading original file...', 'INFO');
       try {
-        payloadBase64 = await new Promise<string>((resolve, reject) => {
+        const rawBase64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = (e) => {
             if (e.target?.result) {
@@ -233,6 +246,21 @@ const App: React.FC = () => {
           reader.onerror = () => reject(new Error('FileReader error'));
           reader.readAsDataURL(selectedFile);
         });
+
+        const hasTransform = filters.rotation !== 0 || filters.flipH || filters.flipV;
+
+        if (hasTransform) {
+          // Apply rotation/filters to the raw file
+          addLog(`Applying filters: rotation=${filters.rotation}°, flipH=${filters.flipH}, flipV=${filters.flipV}`, 'INFO');
+          payloadBase64 = await generateProcessedImage(rawBase64, filters);
+
+          if (filters.rotation !== 0) {
+            addLog(`✅ Image rotated ${filters.rotation}° before OCR extraction`, 'SUCCESS');
+          }
+        } else {
+          // No transformations - use raw file directly
+          payloadBase64 = rawBase64;
+        }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         addLog(`Failed to read file: ${errorMessage}`, 'ERROR');
