@@ -11,8 +11,11 @@ export const generateProcessedImage = async (
   return new Promise((resolve, reject) => {
     const img = new Image();
 
-    // Set crossOrigin to allow canvas manipulation
-    img.crossOrigin = 'anonymous';
+    // Only set crossOrigin for external URLs, not data URLs
+    // Data URLs don't need CORS and setting crossOrigin can cause issues
+    if (!originalBase64.startsWith('data:')) {
+      img.crossOrigin = 'anonymous';
+    }
 
     img.onload = () => {
       try {
