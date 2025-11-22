@@ -207,6 +207,9 @@ const App: React.FC = () => {
           console.log('[DEBUG] Original image start:', previewUrl.substring(0, 100));
           console.log('[DEBUG] Processed image start:', payloadBase64.substring(0, 100));
           console.log('[DEBUG] Images are different:', payloadBase64 !== previewUrl);
+
+          // Offer to download processed image for verification
+          addLog('💾 Tip: Check browser console to verify rotation was applied', 'INFO');
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
