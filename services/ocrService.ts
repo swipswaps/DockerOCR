@@ -3,6 +3,7 @@ import { OCREngine, OCRResult } from "../types";
 import { requireApiKey } from "../config/env";
 import { GEMINI_MODEL } from "../constants";
 import { checkContainerHealth } from "./dockerService";
+import { pollDockerLogs, formatDockerLog, isErrorLog } from "./dockerLogService";
 
 // Initialize Gemini with validated API key
 const getAI = () => {
@@ -184,12 +185,24 @@ const performPaddleExtraction = async (
 
   const paddleEndpoint = 'http://localhost:5000/ocr';
 
+  // Extract clean base64 data
+  const cleanBase64 = base64Data.split(',')[1] || base64Data;
+
+  onLog('Sending image to PaddleOCR container...');
+
+  // Start polling Docker logs for real-time progress
+  const stopPolling = pollDockerLogs((newLogs) => {
+    newLogs.forEach(log => {
+      const formattedLog = formatDockerLog(log);
+      if (isErrorLog(log)) {
+        onLog(formattedLog); // Show errors immediately
+      } else {
+        onLog(formattedLog); // Show all logs
+      }
+    });
+  }, 1000); // Poll every 1 second
+
   try {
-    // Extract clean base64 data
-    const cleanBase64 = base64Data.split(',')[1] || base64Data;
-
-    onLog('Sending image to PaddleOCR container...');
-
     // Make actual HTTP request to PaddleOCR Docker container
     const response = await fetch(paddleEndpoint, {
       method: 'POST',
@@ -203,16 +216,38 @@ const performPaddleExtraction = async (
       signal: AbortSignal.timeout(60000) // 60 second timeout
     });
 
-    if (!response.ok) {
-      throw new Error(`PaddleOCR API returned ${response.status}: ${response.statusText}`);
-    }
+    // Stop polling after request completes
+    stopPolling();
 
-    onLog('PP-OCRv4 detection model loaded.');
-    onLog('Running classification & text recognition heads...');
+    if (!response.ok) {
+      // Try to get detailed error from response
+      let errorDetails = '';
+      try {
+        const errorData = await response.json();
+        if (errorData.error_type) {
+          errorDetails = `${errorData.error_type}: ${errorData.error}`;
+          if (errorData.hint) {
+            onLog(`⚠️ ${errorData.hint}`);
+          }
+          if (errorData.traceback) {
+            // Log first few lines of traceback
+            const traceLines = errorData.traceback.split('\n').slice(0, 5);
+            traceLines.forEach((line: string) => onLog(`  ${line}`));
+          }
+        } else {
+          errorDetails = errorData.error || response.statusText;
+        }
+      } catch {
+        errorDetails = response.statusText;
+      }
+      throw new Error(`PaddleOCR API returned ${response.status}: ${errorDetails}`);
+    }
 
     const result = await response.json();
 
-    onLog('Processing bounding boxes (dt_boxes)...');
+    // The server now logs progress, so we don't need to fake it
+    // Just show the final success message
+    onLog('✅ PaddleOCR processing complete');
 
     // Transform PaddleOCR response to our OCRResult format
     // Expected PaddleOCR response format: { text: string, blocks: Array<{text, confidence, bbox}> }
@@ -222,10 +257,13 @@ const performPaddleExtraction = async (
       blocks: result.blocks || []
     };
 
-    onLog(`PaddleOCR extraction successful. ${ocrResult.blocks.length} blocks detected.`);
+    onLog(`✅ PaddleOCR extraction successful. ${ocrResult.blocks.length} blocks detected.`);
     return ocrResult;
 
   } catch (error) {
+    // Make sure to stop polling on error
+    stopPolling();
+
     const errorMessage = error instanceof Error ? error.message : String(error);
 
     // Don't fallback if it's a Docker setup issue - let the UI handle it

@@ -4,7 +4,7 @@ PaddleOCR Server
 Provides OCR API endpoint for the DockerOCR Dashboard
 """
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from paddleocr import PaddleOCR
 import base64
@@ -12,28 +12,62 @@ import io
 from PIL import Image
 import logging
 import numpy as np
+import sys
+from collections import deque
+from datetime import datetime
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Configure logging with custom handler to capture logs
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    stream=sys.stdout
+)
 logger = logging.getLogger(__name__)
+
+# Store recent logs in memory (last 100 lines)
+recent_logs = deque(maxlen=100)
+
+# Custom logging handler to capture logs
+class LogCapture(logging.Handler):
+    def emit(self, record):
+        log_entry = {
+            'timestamp': datetime.now().isoformat(),
+            'level': record.levelname,
+            'message': self.format(record)
+        }
+        recent_logs.append(log_entry)
+
+# Add custom handler
+log_capture = LogCapture()
+log_capture.setFormatter(logging.Formatter('%(message)s'))
+logger.addHandler(log_capture)
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend requests
 
 # Initialize PaddleOCR (this will download models on first run)
-logger.info("Initializing PaddleOCR...")
+logger.info("🚀 Initializing PaddleOCR...")
 ocr = PaddleOCR(
     use_angle_cls=True,   # Enable angle classification
     lang='en',            # English language
     show_log=False        # Disable verbose logging
 )
-logger.info("PaddleOCR initialized successfully")
+logger.info("✅ PaddleOCR initialized successfully")
 
 
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint"""
     return jsonify({'status': 'healthy', 'service': 'PaddleOCR'}), 200
+
+
+@app.route('/logs', methods=['GET'])
+def get_logs():
+    """Get recent logs from the container"""
+    return jsonify({
+        'logs': list(recent_logs),
+        'count': len(recent_logs)
+    }), 200
 
 
 @app.route('/ocr', methods=['POST'])
@@ -58,22 +92,26 @@ def perform_ocr():
             image = image.convert('RGB')
         
         filename = data.get('filename', 'unknown')
-        logger.info(f"Processing image: {filename}")
-        
+        logger.info(f"📥 Processing image: {filename}")
+
         # Perform OCR using the new predict() API
         # Convert PIL Image to numpy array
         image_np = np.array(image)
 
-        logger.info(f"Image shape: {image_np.shape}, dtype: {image_np.dtype}")
+        logger.info(f"📐 Image shape: {image_np.shape}, dtype: {image_np.dtype}")
+        logger.info(f"🔄 Starting PaddleOCR detection...")
 
         try:
             # Use the older ocr() API which is more stable
+            logger.info(f"🚀 Loading PP-OCRv4 detection model...")
             result = ocr.ocr(image_np, cls=True)
+            logger.info(f"✅ PaddleOCR detection complete")
 
             # Debug: Log the result structure
-            logger.info(f"PaddleOCR result type: {type(result)}, length: {len(result) if result else 0}")
+            logger.info(f"📊 PaddleOCR result type: {type(result)}, length: {len(result) if result else 0}")
             if result and len(result) > 0:
-                logger.info(f"First page has {len(result[0])} text lines")
+                logger.info(f"📄 First page has {len(result[0])} text lines")
+                logger.info(f"🔍 Running classification & text recognition heads...")
         except Exception as e:
             logger.error(f"PaddleOCR ocr() failed: {type(e).__name__}: {str(e)}")
             import traceback
@@ -90,7 +128,8 @@ def perform_ocr():
             page_result = result[0]  # Get first page
 
             if page_result:
-                logger.info(f"Found {len(page_result)} text blocks")
+                logger.info(f"📦 Processing bounding boxes (dt_boxes)...")
+                logger.info(f"✅ Found {len(page_result)} text blocks")
 
                 for line in page_result:
                     # line[0] = bbox coordinates [[x1,y1], [x2,y2], [x3,y3], [x4,y4]]
@@ -118,8 +157,8 @@ def perform_ocr():
         
         # Combine all text
         full_text = '\n'.join(full_text_lines)
-        
-        logger.info(f"OCR complete: {len(blocks)} blocks detected")
+
+        logger.info(f"✅ PaddleOCR extraction successful. {len(blocks)} blocks detected.")
         
         return jsonify({
             'text': full_text,
@@ -128,10 +167,32 @@ def perform_ocr():
         }), 200
         
     except Exception as e:
-        logger.error(f"OCR error: {str(e)}")
+        error_type = type(e).__name__
+        error_msg = str(e)
+        logger.error(f"OCR error: {error_type}: {error_msg}")
         import traceback
-        logger.error(f"Full traceback:\n{traceback.format_exc()}")
-        return jsonify({'error': str(e)}), 500
+        full_traceback = traceback.format_exc()
+        logger.error(f"Full traceback:\n{full_traceback}")
+
+        # Return detailed error information to frontend
+        return jsonify({
+            'error': error_msg,
+            'error_type': error_type,
+            'traceback': full_traceback,
+            'hint': get_error_hint(error_type, error_msg)
+        }), 500
+
+
+def get_error_hint(error_type, error_msg):
+    """Provide user-friendly hints for common errors"""
+    if 'could not execute a primitive' in error_msg:
+        return 'PaddlePaddle runtime error. This usually resolves on retry. The container may need more memory or CPU resources.'
+    elif 'out of memory' in error_msg.lower():
+        return 'Container ran out of memory. Try reducing image size or increasing Docker memory limit.'
+    elif 'timeout' in error_msg.lower():
+        return 'Processing timeout. Try a smaller image or increase timeout settings.'
+    else:
+        return f'{error_type}: {error_msg}'
 
 
 if __name__ == '__main__':
