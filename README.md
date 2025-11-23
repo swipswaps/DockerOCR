@@ -14,6 +14,30 @@
 
 ---
 
+## 📸 Screenshots
+
+<div align="center">
+
+### Main Interface
+![Main Interface](screenshots/01-main-interface.png)
+*Clean, modern dark theme interface with drag-and-drop file upload*
+
+### Image Editor with Controls
+![Editor Tab](screenshots/03-editor-tab.png)
+*Live image preview with rotation, flip, filters, and zoom controls*
+
+### OCR Processing
+![Extraction Running](screenshots/06-extraction-running.png)
+*Real-time terminal logs showing Docker container status during OCR extraction*
+
+### Results View
+![Results JSON](screenshots/08-results-json.png)
+*Extracted text with multiple export formats: JSON, Text, CSV, XLSX, SQL*
+
+</div>
+
+---
+
 ## ✨ Features
 
 ### 🖼️ **Image Processing**
@@ -25,16 +49,31 @@
 - **Text Overlay**: Visual bounding boxes on extracted text with click-to-select
 
 ### 🤖 **Dual OCR Engines**
-- **Gemini Vision 2.5** (Cloud, Recommended)
-  - High accuracy for handwriting and complex layouts
-  - Best for multi-column tables and structured documents
-  - Requires Google Gemini API key
 
-- **PaddleOCR** (Local Docker)
-  - Privacy-focused, runs entirely on your machine
-  - Fast processing with table-aware text sorting
-  - No API key required
-  - Automatic column detection for multi-column tables
+| Feature | Gemini Vision 2.5 | PaddleOCR |
+|---------|------------------|-----------|
+| **Location** | ☁️ Cloud API | 🐳 Local Docker |
+| **Accuracy** | ⭐⭐⭐⭐⭐ Excellent | ⭐⭐⭐⭐ Very Good |
+| **Speed** | ~3-5 seconds | ~2-3 seconds |
+| **Privacy** | Data sent to Google | 100% local processing |
+| **Setup** | API key required | Docker required |
+| **Cost** | Free tier available | Free (self-hosted) |
+| **Best For** | Handwriting, complex layouts | Simple documents, privacy |
+| **Table Support** | ✅ Excellent | ✅ Good (column detection) |
+| **Multi-language** | ✅ 100+ languages | ✅ English + others |
+
+**Gemini Vision 2.5** (Cloud, Recommended)
+- High accuracy for handwriting and complex layouts
+- Best for multi-column tables and structured documents
+- Requires Google Gemini API key
+- Handles rotated text automatically
+
+**PaddleOCR** (Local Docker)
+- Privacy-focused, runs entirely on your machine
+- Fast processing with table-aware text sorting
+- No API key required
+- Automatic column detection for multi-column tables
+- Histogram-based column boundary detection
 
 ### 📊 **Export Formats**
 - **JSON**: Full structured data with bounding boxes and confidence scores
@@ -122,6 +161,9 @@ The application has a **two-column layout**:
    - Shows file info: name, size, format
    - HEIC files are automatically converted to PNG
 
+   ![Source Tab](screenshots/02-source-tab.png)
+   *Source tab showing uploaded HEIC file with automatic conversion*
+
 2. **Editor Tab** ✏️
    - **Top Half**: Live image preview with zoom/pan
    - **Bottom Half**: Image controls
@@ -133,6 +175,12 @@ The application has a **two-column layout**:
      - **Crop**: Select and crop regions
    - **Text Mode**: After OCR, switch to text overlay mode to see bounding boxes
 
+   ![Editor Tab](screenshots/03-editor-tab.png)
+   *Editor tab with live preview and comprehensive image controls*
+
+   ![Image Rotated](screenshots/04-image-rotated.png)
+   *Image rotated 90° - rotation is applied before OCR extraction*
+
 3. **Process Tab** ▶️
    - **OCR Engine Selector**: Choose between Gemini or PaddleOCR
    - **Start Extraction Button**: Begin OCR processing
@@ -141,6 +189,15 @@ The application has a **two-column layout**:
      - Docker container status (for PaddleOCR)
      - OCR progress and results
      - Error messages with troubleshooting hints
+
+   ![Process Tab](screenshots/05-process-tab.png)
+   *Process tab with OCR engine selector and terminal ready for extraction*
+
+   ![Extraction Running](screenshots/06-extraction-running.png)
+   *Real-time Docker logs streaming during OCR processing*
+
+   ![Extraction Complete](screenshots/07-extraction-complete.png)
+   *Successful extraction with detailed logs and processing time*
 
 #### **Right Column: Results View**
 
@@ -154,21 +211,39 @@ After OCR extraction, view results in multiple formats:
 
 Each tab has a **Copy** button to copy content to clipboard.
 
+![Results View](screenshots/08-results-json.png)
+*Results view showing extracted text blocks with confidence scores and bounding boxes in JSON format*
+
 ### Workflow Example
+
+```
+┌─────────────┐      ┌─────────────┐      ┌─────────────┐      ┌─────────────┐
+│   Upload    │  →   │    Edit     │  →   │   Process   │  →   │   Export    │
+│   Image     │      │   (Optional)│      │     OCR     │      │   Results   │
+└─────────────┘      └─────────────┘      └─────────────┘      └─────────────┘
+  • Drag-drop         • Rotate 90°         • Select engine     • JSON/Text
+  • HEIC support      • Flip H/V           • Start extraction  • CSV/XLSX/SQL
+  • Auto-convert      • Adjust filters     • View logs         • Copy/Download
+```
+
+#### Step-by-Step Guide:
 
 1. **Upload an image**
    - Click "Choose File" or drag-and-drop
    - Wait for HEIC conversion if applicable
+   - File info appears in Source tab
 
 2. **Edit the image (optional)**
    - Switch to "Editor" tab
-   - Rotate if the image is sideways
-   - Adjust filters for better OCR accuracy
+   - Rotate if the image is sideways (rotation is applied before OCR)
+   - Adjust filters for better OCR accuracy (contrast, brightness)
    - Crop to focus on specific regions
 
 3. **Run OCR extraction**
    - Switch to "Process" tab
-   - Select OCR engine (Gemini recommended for best accuracy)
+   - Select OCR engine:
+     - **Gemini Vision 2.5**: Best for complex layouts, handwriting, tables
+     - **PaddleOCR**: Fast, private, local processing
    - Click "Start Extraction"
    - Watch real-time logs in the terminal
 
@@ -178,7 +253,7 @@ Each tab has a **Copy** button to copy content to clipboard.
    - Click "Copy" to copy to clipboard
    - Click "Download XLSX" to save as Excel file
 
-5. **Select text on image**
+5. **Select text on image (optional)**
    - Switch to "Editor" tab
    - Toggle to "Text" mode (eye icon)
    - Click and drag on the image to select text
