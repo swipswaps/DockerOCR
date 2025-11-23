@@ -178,7 +178,7 @@ The application has a **two-column layout**:
    *Editor tab with live preview and comprehensive image controls*
 
    ![Image Rotated](screenshots/04-image-rotated.png)
-   *Image rotated 90° - rotation is applied before OCR extraction*
+   *Image rotation - may be applied before OCR extraction*
 
 3. **Process Tab** ▶️
    - **OCR Engine Selector**: Choose between Gemini or PaddleOCR
