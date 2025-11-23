@@ -30,7 +30,7 @@
 *Real-time terminal logs showing Docker container status during OCR extraction*
 
 ### Results View
-![Results JSON](screenshots/08-results-json.png)
+![Results JSON](screenshots/08-results-xlsx.png)
 *Extracted text with multiple export formats: JSON, Text, CSV, XLSX, SQL*
 
 </div>
