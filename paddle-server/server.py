@@ -336,20 +336,23 @@ def perform_ocr():
         logger.info("─────────────────────────────────────────────────")
 
         # Retry logic for "could not execute a primitive" error
-        max_retries = 3
-        retry_delay = 1  # seconds
+        # Increase retries to 10 for better reliability
+        max_retries = 10
+        retry_delay = 0.5  # Start with shorter delay
         result = None
 
         for attempt in range(max_retries):
             try:
                 if attempt > 0:
-                    logger.info(f"🔄 Retry attempt {attempt + 1}/{max_retries} after {retry_delay}s delay...")
+                    print(f"🔄 Retry attempt {attempt + 1}/{max_retries} after {retry_delay:.1f}s delay...", flush=True)
+                    logger.info(f"🔄 Retry attempt {attempt + 1}/{max_retries} after {retry_delay:.1f}s delay...")
                     time.sleep(retry_delay)
-                    retry_delay *= 2  # Exponential backoff
+                    retry_delay = min(retry_delay * 1.5, 5)  # Exponential backoff, max 5s
 
                 # Use the older ocr() API which is more stable
                 logger.info("🚀 Loading PP-OCRv4 detection model...")
                 logger.info("⏳ This may take a moment on first run or with large images...")
+                print(f"🚀 Attempt {attempt + 1}/{max_retries}: Running OCR inference...", flush=True)
 
                 result = ocr.ocr(image_np, cls=True)
 
@@ -369,42 +372,82 @@ def perform_ocr():
                 elapsed = time.time() - start_time
                 error_msg = str(e)
 
+                # Get full traceback for detailed error info
+                import traceback
+                import sys
+                full_traceback = traceback.format_exc()
+                exc_type, exc_value, exc_tb = sys.exc_info()
+
                 # Check if it's the "could not execute a primitive" error
                 if "could not execute a primitive" in error_msg:
+                    # Print to stdout for immediate visibility
+                    print("═══════════════════════════════════════════════════", flush=True)
+                    print(f"⚠️  PADDLEOCR RUNTIME ERROR (attempt {attempt + 1}/{max_retries})", flush=True)
+                    print(f"⚠️  Error: {error_msg}", flush=True)
+                    print(f"⚠️  Elapsed time: {elapsed:.2f}s", flush=True)
+                    print("═══════════════════════════════════════════════════", flush=True)
+
+                    # Also log to logger
                     logger.warning("═══════════════════════════════════════════════════")
                     logger.warning(f"⚠️  PADDLEOCR RUNTIME ERROR (attempt {attempt + 1}/{max_retries})")
                     logger.warning(f"⚠️  Error: {error_msg}")
+                    logger.warning(f"⚠️  Elapsed time: {elapsed:.2f}s")
                     logger.warning("═══════════════════════════════════════════════════")
 
+                    # Print full traceback for debugging
+                    print("📋 FULL PYTHON TRACEBACK:", flush=True)
+                    print(full_traceback, flush=True)
+                    logger.warning("📋 FULL PYTHON TRACEBACK:")
+                    logger.warning(full_traceback)
+
                     if attempt < max_retries - 1:
-                        logger.warning(f"🔄 Will retry in {retry_delay}s...")
+                        print(f"🔄 Will retry in {retry_delay:.1f}s...", flush=True)
+                        logger.warning(f"🔄 Will retry in {retry_delay:.1f}s...")
                         continue
                     else:
+                        print("═══════════════════════════════════════════════════", flush=True)
+                        print(f"❌ PADDLEOCR FAILED after {max_retries} attempts ({elapsed:.2f}s total)", flush=True)
+                        print(f"❌ Error: {error_msg}", flush=True)
+                        print("═══════════════════════════════════════════════════", flush=True)
+                        print("💡 TROUBLESHOOTING:", flush=True)
+                        print("   1. This error is caused by CPU instruction set incompatibility", flush=True)
+                        print("   2. The container is using CPU-only mode with optimizations disabled", flush=True)
+                        print("   3. Try restarting: docker compose restart paddleocr", flush=True)
+                        print("   4. Try rebuilding: docker compose up -d --build paddleocr", flush=True)
+                        print("   5. Check Docker resource limits (increase CPU/Memory)", flush=True)
+                        print("   6. Consider using Gemini Vision API as alternative", flush=True)
+                        print("═══════════════════════════════════════════════════", flush=True)
+
                         logger.error("═══════════════════════════════════════════════════")
                         logger.error(f"❌ PADDLEOCR FAILED after {max_retries} attempts ({elapsed:.2f}s total)")
                         logger.error(f"❌ Error: {error_msg}")
                         logger.error("═══════════════════════════════════════════════════")
                         logger.error("💡 TROUBLESHOOTING:")
-                        logger.error("   1. This error is often caused by CPU instruction set incompatibility")
-                        logger.error("   2. Try restarting the container: docker compose restart paddleocr")
-                        logger.error("   3. If problem persists, rebuild: docker compose up -d --build paddleocr")
-                        logger.error("   4. Check Docker resource limits (CPU/Memory)")
-                        logger.error("   5. Consider using Gemini Vision API as alternative")
+                        logger.error("   1. This error is caused by CPU instruction set incompatibility")
+                        logger.error("   2. The container is using CPU-only mode with optimizations disabled")
+                        logger.error("   3. Try restarting: docker compose restart paddleocr")
+                        logger.error("   4. Try rebuilding: docker compose up -d --build paddleocr")
+                        logger.error("   5. Check Docker resource limits (increase CPU/Memory)")
+                        logger.error("   6. Consider using Gemini Vision API as alternative")
                         logger.error("═══════════════════════════════════════════════════")
-                        import traceback
-                        full_traceback = traceback.format_exc()
                         logger.error("📋 FULL TRACEBACK:")
                         logger.error(full_traceback)
                         logger.error("═══════════════════════════════════════════════════")
                         raise
                 else:
                     # Different RuntimeError - don't retry
+                    print("═══════════════════════════════════════════════════", flush=True)
+                    print(f"❌ PADDLEOCR RUNTIME ERROR after {elapsed:.2f}s", flush=True)
+                    print(f"❌ Error: {error_msg}", flush=True)
+                    print("═══════════════════════════════════════════════════", flush=True)
+                    print("📋 FULL TRACEBACK:", flush=True)
+                    print(full_traceback, flush=True)
+                    print("═══════════════════════════════════════════════════", flush=True)
+
                     logger.error("═══════════════════════════════════════════════════")
                     logger.error(f"❌ PADDLEOCR RUNTIME ERROR after {elapsed:.2f}s")
                     logger.error(f"❌ Error: {error_msg}")
                     logger.error("═══════════════════════════════════════════════════")
-                    import traceback
-                    full_traceback = traceback.format_exc()
                     logger.error("📋 FULL TRACEBACK:")
                     logger.error(full_traceback)
                     logger.error("═══════════════════════════════════════════════════")
