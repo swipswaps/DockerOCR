@@ -260,6 +260,38 @@ const App: React.FC = () => {
     }
   }, [addLog, resetFilters]);
 
+  const handleManualRotationDetect = useCallback(async () => {
+    if (!previewUrl) {
+      addLog('No image loaded to detect rotation', 'WARN');
+      return;
+    }
+
+    addLog('Manually triggering rotation detection...', 'INFO');
+    try {
+      const angleResult = await detectRotationAngle(
+        previewUrl,
+        (_progress, status) => {
+          addLog(status, 'INFO');
+        }
+      );
+
+      if (angleResult.confidence > 0.5 && angleResult.angle !== 0) {
+        addLog(`Detected rotation: ${angleResult.angle}° - applying correction...`, 'SUCCESS');
+        const rotatedImage = await rotateImage(previewUrl, angleResult.angle);
+        setPreviewUrl(rotatedImage);
+        autoRotationDoneRef.current = rotatedImage;
+        addLog(`Image rotated ${angleResult.angle}° for optimal OCR`, 'SUCCESS');
+      } else if (angleResult.angle === 0) {
+        addLog('No rotation correction needed', 'INFO');
+      } else {
+        addLog(`Low confidence (${(angleResult.confidence * 100).toFixed(0)}%) - skipping auto-rotation`, 'WARN');
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      addLog(`Manual rotation detection failed: ${errorMsg}`, 'ERROR');
+    }
+  }, [previewUrl, addLog]);
+
 
 
   const handleProcess = useCallback(async () => {
@@ -683,6 +715,7 @@ const App: React.FC = () => {
                       onCrop={handleCrop}
                       autoRotateEnabled={autoRotateEnabled}
                       onAutoRotateChange={engine === 'PADDLE' ? setAutoRotateEnabled : undefined}
+                      onManualRotationDetect={engine === 'PADDLE' ? handleManualRotationDetect : undefined}
                     />
                   </div>
                 )}

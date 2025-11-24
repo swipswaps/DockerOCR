@@ -11,6 +11,7 @@ interface ImageControlsProps {
   onCrop?: () => void;
   autoRotateEnabled?: boolean;
   onAutoRotateChange?: (enabled: boolean) => void;
+  onManualRotationDetect?: () => void;
 }
 
 const ImageControls: React.FC<ImageControlsProps> = ({
@@ -21,7 +22,8 @@ const ImageControls: React.FC<ImageControlsProps> = ({
   onZoomOut,
   onCrop,
   autoRotateEnabled = true,
-  onAutoRotateChange
+  onAutoRotateChange,
+  onManualRotationDetect
 }) => {
   const handleChange = (key: keyof ImageFilters, value: number | boolean) => {
     onChange({ ...filters, [key]: value });
@@ -98,25 +100,40 @@ const ImageControls: React.FC<ImageControlsProps> = ({
 
         {/* Auto-Rotation Toggle (PaddleOCR only) */}
         {onAutoRotateChange && (
-          <div className="flex items-center justify-between bg-gray-800/50 border border-gray-700/50 rounded px-3 py-2">
-            <div className="flex items-center space-x-2">
-              <span className="text-xs text-gray-300 font-medium">Auto-Detect Rotation</span>
-              <span className="text-[10px] text-gray-500">(PaddleOCR)</span>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between bg-gray-800/50 border border-gray-700/50 rounded px-3 py-2">
+              <div className="flex items-center space-x-2">
+                <span className="text-xs text-gray-300 font-medium">Auto-Detect Rotation</span>
+                <span className="text-[10px] text-gray-500">(PaddleOCR)</span>
+              </div>
+              <button
+                onClick={() => onAutoRotateChange(!autoRotateEnabled)}
+                disabled={disabled}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                  autoRotateEnabled ? 'bg-emerald-600' : 'bg-gray-600'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                title={autoRotateEnabled ? 'Auto-rotation enabled - Tesseract.js will detect text orientation' : 'Auto-rotation disabled - use manual controls only'}
+              >
+                <span
+                  className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                    autoRotateEnabled ? 'translate-x-5' : 'translate-x-1'
+                  }`}
+                />
+              </button>
             </div>
-            <button
-              onClick={() => onAutoRotateChange(!autoRotateEnabled)}
-              disabled={disabled}
-              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                autoRotateEnabled ? 'bg-emerald-600' : 'bg-gray-600'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-              title={autoRotateEnabled ? 'Auto-rotation enabled - Tesseract.js will detect text orientation' : 'Auto-rotation disabled - use manual controls only'}
-            >
-              <span
-                className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                  autoRotateEnabled ? 'translate-x-5' : 'translate-x-1'
-                }`}
-              />
-            </button>
+
+            {/* Manual Rotation Detection Button */}
+            {onManualRotationDetect && (
+              <button
+                onClick={onManualRotationDetect}
+                disabled={disabled}
+                className="w-full px-3 py-2 bg-emerald-900/30 hover:bg-emerald-900/50 border border-emerald-700/50 hover:border-emerald-600 rounded text-xs text-emerald-400 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                title="Manually trigger rotation detection using Tesseract.js"
+              >
+                <IconRotate />
+                <span>Detect Rotation Now</span>
+              </button>
+            )}
           </div>
         )}
       </div>

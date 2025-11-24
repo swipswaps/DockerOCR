@@ -57,6 +57,13 @@ export async function detectRotationAngle(
     onProgress?.(60, `DEBUG: OSD output: ${osdText.replace(/\n/g, ' | ')}`);
     onProgress?.(70, `DEBUG: data.text=${data.text?.substring(0, 50) || 'none'}, confidence=${data.confidence}, rotateRadians=${data.rotateRadians}`);
 
+    // Check if OSD output is empty - this means Tesseract couldn't detect orientation
+    if (!osdText || osdText.trim() === '') {
+      const errorMsg = 'Tesseract OSD returned empty output - image may not contain detectable text or HEIC conversion already applied rotation';
+      onProgress?.(100, `ERROR: ${errorMsg}`);
+      throw new Error(errorMsg);
+    }
+
     // Extract rotation angle from OSD output
     // Format: "Rotate: 90" means image needs 90° rotation to be upright
     const rotateMatch = osdText.match(/Rotate:\s*(\d+)/);
@@ -91,7 +98,11 @@ export async function detectRotationAngle(
   } catch (error) {
     console.error('Angle detection failed:', error);
     const errorMsg = error instanceof Error ? error.message : String(error);
-    onProgress?.(100, `Orientation detection failed: ${errorMsg}`);
+    const errorStack = error instanceof Error ? error.stack : '';
+    onProgress?.(100, `ERROR: Orientation detection failed: ${errorMsg}`);
+    if (errorStack) {
+      onProgress?.(100, `ERROR: Stack trace: ${errorStack.split('\n').slice(0, 3).join(' | ')}`);
+    }
 
     // Fallback to manual (no rotation)
     return {
