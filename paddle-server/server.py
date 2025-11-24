@@ -49,10 +49,12 @@ CORS(app)  # Enable CORS for frontend requests
 # Initialize PaddleOCR (this will download models on first run)
 logger.info("🚀 Initializing PaddleOCR...")
 print("🚀 Initializing PaddleOCR with CPU-optimized settings...", flush=True)
+print("⚠️  Disabling angle classification to avoid CPU instruction set issues", flush=True)
 
 # Use CPU-friendly settings to avoid "could not execute a primitive" errors
+# CRITICAL: use_angle_cls=False because text_classifier causes "could not execute a primitive" on Intel N100
 ocr = PaddleOCR(
-    use_angle_cls=True,        # Enable angle classification
+    use_angle_cls=False,       # ❌ DISABLED - text_classifier fails on this CPU
     lang='en',                 # English language
     show_log=False,            # Disable verbose logging
     use_gpu=False,             # Explicitly use CPU
@@ -61,8 +63,8 @@ ocr = PaddleOCR(
     use_tensorrt=False,        # Disable TensorRT
     use_mp=False,              # Disable multiprocessing
 )
-print("✅ PaddleOCR initialized successfully", flush=True)
-logger.info("✅ PaddleOCR initialized successfully")
+print("✅ PaddleOCR initialized successfully (angle classification disabled)", flush=True)
+logger.info("✅ PaddleOCR initialized successfully (angle classification disabled)")
 
 # Track readiness state
 ocr_ready = False
@@ -352,9 +354,10 @@ def perform_ocr():
                 # Use the older ocr() API which is more stable
                 logger.info("🚀 Loading PP-OCRv4 detection model...")
                 logger.info("⏳ This may take a moment on first run or with large images...")
-                print(f"🚀 Attempt {attempt + 1}/{max_retries}: Running OCR inference...", flush=True)
+                print(f"🚀 Attempt {attempt + 1}/{max_retries}: Running OCR inference (no angle classification)...", flush=True)
 
-                result = ocr.ocr(image_np, cls=True)
+                # cls=False because angle classification fails on Intel N100 CPU
+                result = ocr.ocr(image_np, cls=False)
 
                 elapsed = time.time() - start_time
                 logger.info(f"✅ PaddleOCR detection complete in {elapsed:.2f}s")
