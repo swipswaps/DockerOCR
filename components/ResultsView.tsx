@@ -142,8 +142,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({ data }) => {
   );
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
-      <div className="flex items-center justify-between px-2 bg-gray-850 border-b border-gray-800 overflow-x-auto no-scrollbar">
+    <div className="flex flex-col h-full bg-gray-900 rounded-lg border border-gray-800 overflow-hidden max-w-full">
+      <div className="flex items-center justify-between px-2 bg-gray-850 border-b border-gray-800 overflow-x-auto no-scrollbar max-w-full">
         <div className="flex">
           {renderTabButton('json', 'JSON')}
           {renderTabButton('text', 'Text')}
@@ -175,10 +175,10 @@ const ResultsView: React.FC<ResultsViewProps> = ({ data }) => {
         </div>
       </div>
 
-      <div className="relative flex-1 overflow-auto bg-[#0B0F19]">
+      <div className="relative flex-1 overflow-auto bg-[#0B0F19] max-w-full">
         {activeTab === 'xlsx' ? (
-          <div className="p-4">
-            <div className="overflow-x-auto border border-gray-800 rounded-lg">
+          <div className="p-4 max-w-full">
+            <div className="overflow-x-auto border border-gray-800 rounded-lg max-w-full">
               <table className="min-w-full divide-y divide-gray-800">
                 <thead className="bg-gray-900">
                   <tr>
@@ -212,13 +212,13 @@ const ResultsView: React.FC<ResultsViewProps> = ({ data }) => {
             </div>
           </div>
         ) : (
-          <div className="p-4 h-full">
+          <div className="p-4 h-full max-w-full overflow-x-auto">
              {activeTab === 'json' ? (
-               <pre className="font-mono text-xs text-emerald-300/90 whitespace-pre-wrap">
+               <pre className="font-mono text-xs text-emerald-300/90 whitespace-pre-wrap break-words max-w-full">
                  {getDisplayContent()}
                </pre>
              ) : (
-               <pre className="font-mono text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">
+               <pre className="font-mono text-xs text-gray-300 whitespace-pre-wrap leading-relaxed break-words max-w-full">
                  {getDisplayContent()}
                </pre>
              )}

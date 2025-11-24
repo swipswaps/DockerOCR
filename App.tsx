@@ -68,6 +68,8 @@ const App: React.FC = () => {
       setIsConverting(true);
 
       try {
+        // Convert HEIC to PNG for browser preview
+        // Note: User can manually rotate using the rotation controls if needed
         const convertedBlob = await heic2any({
           blob: file,
           toType: "image/png",
@@ -91,7 +93,8 @@ const App: React.FC = () => {
             reader.readAsDataURL(blob);
           });
 
-          // Batch state updates together
+          // Store the converted PNG as preview
+          // User can manually rotate using the rotation controls if needed
           setPreviewUrl(dataUrl);
           setIsConverting(false);
           addLog('HEIC conversion complete. Preview and filters enabled.', 'SUCCESS');
@@ -212,6 +215,9 @@ const App: React.FC = () => {
           console.log('[DEBUG] Original image start:', previewUrl.substring(0, 100));
           console.log('[DEBUG] Processed image start:', payloadBase64.substring(0, 100));
           console.log('[DEBUG] Images are different:', payloadBase64 !== previewUrl);
+
+          // Store full processed image for debugging
+          (window as any).__processedImageForOCR = payloadBase64;
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           addLog(`⚠️ Transformation failed: ${errorMessage}. Using original.`, 'ERROR');
@@ -276,6 +282,9 @@ const App: React.FC = () => {
     }
 
     setProcessedImage(payloadBase64);
+
+    // Store the image being sent to OCR for debugging (accessible via browser console)
+    (window as any).__sentToOCR = payloadBase64;
 
     try {
       const data = await performOCRExtraction(
@@ -379,7 +388,7 @@ const App: React.FC = () => {
   useKeyboardShortcuts(shortcuts, shortcutsEnabled);
 
   return (
-    <div className="min-h-screen flex flex-col font-sans text-gray-300 selection:bg-emerald-500/30">
+    <div className="min-h-screen flex flex-col font-sans text-gray-300 selection:bg-emerald-500/30 overflow-x-hidden">
       {/* Header */}
       <header className="h-14 border-b border-gray-800 bg-gray-950 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-10">
         <div className="flex items-center space-x-2">
@@ -409,10 +418,10 @@ const App: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col lg:flex-row lg:overflow-hidden p-2 lg:p-4 gap-4">
+      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden p-2 lg:p-4 gap-4 max-w-full">
         
         {/* Left Column: Tabbed Interface */}
-        <div className="w-full lg:w-1/2 flex flex-col bg-gray-900/50 rounded-xl border border-gray-800 overflow-hidden shrink-0 min-h-[600px] lg:min-h-0">
+        <div className="w-full lg:w-1/2 flex flex-col bg-gray-900/50 rounded-xl border border-gray-800 overflow-hidden shrink-0 min-h-[600px] lg:min-h-0 max-w-full">
           
           {/* Tab Navigation */}
           <div className="flex border-b border-gray-800 bg-gray-900">
@@ -654,7 +663,7 @@ const App: React.FC = () => {
         </div>
 
         {/* Right Column: Results */}
-        <div className="w-full lg:w-1/2 flex flex-col min-h-[500px] lg:min-h-0">
+        <div className="w-full lg:w-1/2 flex flex-col min-h-[500px] lg:min-h-0 max-w-full overflow-hidden">
           <ResultsView data={result} />
         </div>
 
