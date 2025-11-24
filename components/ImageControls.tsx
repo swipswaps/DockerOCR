@@ -9,9 +9,20 @@ interface ImageControlsProps {
   onZoomIn?: () => void;
   onZoomOut?: () => void;
   onCrop?: () => void;
+  autoRotateEnabled?: boolean;
+  onAutoRotateChange?: (enabled: boolean) => void;
 }
 
-const ImageControls: React.FC<ImageControlsProps> = ({ filters, onChange, disabled, onZoomIn, onZoomOut, onCrop }) => {
+const ImageControls: React.FC<ImageControlsProps> = ({
+  filters,
+  onChange,
+  disabled,
+  onZoomIn,
+  onZoomOut,
+  onCrop,
+  autoRotateEnabled = true,
+  onAutoRotateChange
+}) => {
   const handleChange = (key: keyof ImageFilters, value: number | boolean) => {
     onChange({ ...filters, [key]: value });
   };
@@ -82,6 +93,30 @@ const ImageControls: React.FC<ImageControlsProps> = ({ filters, onChange, disabl
         {filters.rotation !== 0 && (
           <div className="text-center text-xs text-emerald-400 font-medium bg-emerald-900/20 border border-emerald-700/30 rounded px-2 py-1">
             🔄 Rotated {filters.rotation}° (will be applied to OCR)
+          </div>
+        )}
+
+        {/* Auto-Rotation Toggle (PaddleOCR only) */}
+        {onAutoRotateChange && (
+          <div className="flex items-center justify-between bg-gray-800/50 border border-gray-700/50 rounded px-3 py-2">
+            <div className="flex items-center space-x-2">
+              <span className="text-xs text-gray-300 font-medium">Auto-Detect Rotation</span>
+              <span className="text-[10px] text-gray-500">(PaddleOCR)</span>
+            </div>
+            <button
+              onClick={() => onAutoRotateChange(!autoRotateEnabled)}
+              disabled={disabled}
+              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                autoRotateEnabled ? 'bg-emerald-600' : 'bg-gray-600'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+              title={autoRotateEnabled ? 'Auto-rotation enabled - Tesseract.js will detect text orientation' : 'Auto-rotation disabled - use manual controls only'}
+            >
+              <span
+                className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                  autoRotateEnabled ? 'translate-x-5' : 'translate-x-1'
+                }`}
+              />
+            </button>
           </div>
         )}
       </div>

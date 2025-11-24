@@ -36,6 +36,7 @@ const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('edit');
   const [showHelp, setShowHelp] = useState(false);
   const [showDockerSetup, setShowDockerSetup] = useState(false);
+  const [autoRotateEnabled, setAutoRotateEnabled] = useState(true); // Auto-rotation enabled by default
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imagePreviewRef = useRef<ImagePreviewRef>(null);
@@ -297,7 +298,8 @@ const App: React.FC = () => {
           if (engine === 'PADDLE') {
             setShowDockerSetup(true);
           }
-        }
+        },
+        autoRotateEnabled // Pass auto-rotation setting
       );
       setResult(data);
       setStatus(ExtractionStatus.COMPLETE);
@@ -317,7 +319,7 @@ const App: React.FC = () => {
       setStatus(ExtractionStatus.ERROR);
       addLog(`Error: ${errorMessage}`, 'ERROR');
     }
-  }, [selectedFile, previewUrl, isConverting, isHeic, engine, filters, addLog]);
+  }, [selectedFile, previewUrl, isConverting, isHeic, engine, filters, addLog, autoRotateEnabled]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -574,13 +576,15 @@ const App: React.FC = () => {
                 {/* Controls (Hidden in Text Select Mode) */}
                 {viewMode === 'edit' && (
                   <div className="h-1/2">
-                    <ImageControls 
-                      filters={filters} 
-                      onChange={setFilters} 
+                    <ImageControls
+                      filters={filters}
+                      onChange={setFilters}
                       disabled={status === ExtractionStatus.PROCESSING}
                       onZoomIn={() => setViewState(prev => ({ ...prev, zoom: Math.min(prev.zoom * 1.1, 5) }))}
                       onZoomOut={() => setViewState(prev => ({ ...prev, zoom: Math.max(prev.zoom * 0.9, 1) }))}
                       onCrop={handleCrop}
+                      autoRotateEnabled={autoRotateEnabled}
+                      onAutoRotateChange={engine === 'PADDLE' ? setAutoRotateEnabled : undefined}
                     />
                   </div>
                 )}

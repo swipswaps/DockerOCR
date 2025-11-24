@@ -4,6 +4,7 @@ import { requireApiKey } from "../config/env";
 import { GEMINI_MODEL } from "../constants";
 import { checkContainerHealth } from "./dockerService";
 import { pollDockerLogs, formatDockerLog } from "./dockerLogService";
+import { detectRotationAngle, rotateImage } from "./angleDetectionService";
 
 // Initialize Gemini with validated API key
 const getAI = () => {
@@ -147,7 +148,8 @@ const performPaddleExtraction = async (
   file: File,
   base64Data: string,
   onLog: (msg: string) => void,
-  onDockerError?: () => void
+  onDockerError?: () => void,
+  autoRotateEnabled: boolean = true
 ): Promise<OCRResult> => {
   onLog('🔍 Checking PaddleOCR container health...');
 
@@ -195,12 +197,54 @@ const performPaddleExtraction = async (
   }
 
   onLog('✅ PaddleOCR is ready to process images');
+
+  let imageToProcess = base64Data;
+
+  // Auto-detect rotation angle using Tesseract.js (if enabled)
+  if (autoRotateEnabled) {
+    onLog('');
+    onLog('🔄 ═══════════════════════════════════════════════════');
+    onLog('🔄 AUTO-DETECTING TEXT ORIENTATION');
+    onLog('🔄 ═══════════════════════════════════════════════════');
+
+    try {
+      const angleResult = await detectRotationAngle(
+        base64Data,
+        (_progress, status) => {
+          onLog(`🔍 ${status}`);
+        }
+      );
+
+      if (angleResult.confidence > 0.5 && angleResult.angle !== 0) {
+        onLog(`✅ Detected rotation: ${angleResult.angle}° (confidence: ${(angleResult.confidence * 100).toFixed(0)}%)`);
+        onLog(`🔄 Auto-correcting rotation before OCR...`);
+
+        imageToProcess = await rotateImage(base64Data, angleResult.angle);
+
+        onLog(`✅ Image auto-rotated ${angleResult.angle}° for optimal OCR`);
+      } else if (angleResult.angle === 0) {
+        onLog(`✅ No rotation needed - text is already upright`);
+      } else {
+        onLog(`⚠️ Low confidence (${(angleResult.confidence * 100).toFixed(0)}%) - skipping auto-rotation`);
+        onLog(`💡 You can manually rotate using the rotation controls if needed`);
+      }
+    } catch (error) {
+      onLog(`⚠️ Auto-rotation detection failed: ${error}`);
+      onLog(`💡 Proceeding without auto-rotation - use manual controls if needed`);
+    }
+
+    onLog('🔄 ═══════════════════════════════════════════════════');
+    onLog('');
+  } else {
+    onLog('ℹ️ Auto-rotation disabled - using manual rotation controls only');
+  }
+
   onLog('Connecting to PaddleOCR container (port 5000)...');
 
   const paddleEndpoint = 'http://localhost:5000/ocr';
 
-  // Extract clean base64 data
-  const cleanBase64 = base64Data.split(',')[1] || base64Data;
+  // Extract clean base64 data from the (possibly rotated) image
+  const cleanBase64 = imageToProcess.split(',')[1] || imageToProcess;
 
   onLog('Sending image to PaddleOCR container...');
   onLog('📡 Streaming Docker container logs...');
@@ -355,10 +399,11 @@ export const performOCRExtraction = async (
   base64Data: string,
   onLog: (msg: string) => void,
   engine: OCREngine = 'GEMINI',
-  onDockerError?: () => void
+  onDockerError?: () => void,
+  autoRotateEnabled: boolean = true
 ): Promise<OCRResult> => {
   if (engine === 'PADDLE') {
-    return performPaddleExtraction(file, base64Data, onLog, onDockerError);
+    return performPaddleExtraction(file, base64Data, onLog, onDockerError, autoRotateEnabled);
   } else {
     return performGeminiExtraction(file, base64Data, onLog);
   }
