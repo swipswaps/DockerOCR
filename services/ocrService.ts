@@ -158,19 +158,33 @@ const performPaddleExtraction = async (
     onLog(`⚠️ ${healthStatus.message}`);
 
     if (healthStatus.canAutoFix) {
-      onLog('🔧 Container may be starting. Waiting 10 seconds...');
-      await new Promise(resolve => setTimeout(resolve, 10000));
+      onLog('🔧 PaddleOCR is initializing. Waiting up to 30 seconds...');
 
-      // Check again after waiting
-      const retryStatus = await checkContainerHealth();
-      if (!retryStatus.containerHealthy) {
-        onLog('❌ Container still not ready');
+      // Wait with retries (check every 5 seconds for up to 30 seconds)
+      let retries = 6;
+      let ready = false;
+
+      for (let i = 0; i < retries; i++) {
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        onLog(`⏳ Checking readiness... (${(i + 1) * 5}s / 30s)`);
+
+        const retryStatus = await checkContainerHealth();
+        if (retryStatus.containerHealthy) {
+          ready = true;
+          onLog('✅ PaddleOCR is now ready!');
+          break;
+        }
+      }
+
+      if (!ready) {
+        onLog('❌ PaddleOCR did not become ready within 30 seconds');
+        onLog('💡 Try waiting a bit longer, then click "Start Extraction" again');
+        onLog('💡 Or restart the container: docker compose restart paddleocr');
         if (onDockerError) {
           onDockerError();
         }
         throw new Error('DOCKER_NOT_READY');
       }
-      onLog('✅ Container is now healthy!');
     } else {
       onLog('❌ Docker not available. Please start the container.');
       if (onDockerError) {
@@ -180,7 +194,7 @@ const performPaddleExtraction = async (
     }
   }
 
-  onLog('✅ PaddleOCR container is healthy');
+  onLog('✅ PaddleOCR is ready to process images');
   onLog('Connecting to PaddleOCR container (port 5000)...');
 
   const paddleEndpoint = 'http://localhost:5000/ocr';
@@ -222,6 +236,30 @@ const performPaddleExtraction = async (
       let errorDetails = '';
       try {
         const errorData = await response.json();
+
+        // Handle 503 Service Unavailable (PaddleOCR not ready)
+        if (response.status === 503 && errorData.status === 'not_ready') {
+          onLog('⚠️ ═══════════════════════════════════════════════════');
+          onLog('⚠️ PADDLEOCR NOT READY');
+          onLog('⚠️ ═══════════════════════════════════════════════════');
+          onLog(`⚠️ ${errorData.error || errorData.message}`);
+
+          if (errorData.hint) {
+            onLog(`💡 HINT: ${errorData.hint}`);
+          }
+
+          if (errorData.error) {
+            onLog(`📋 Details: ${errorData.error}`);
+          }
+
+          onLog('⚠️ ═══════════════════════════════════════════════════');
+
+          // Stop polling
+          stopPolling();
+
+          throw new Error('PaddleOCR is not ready yet. Please wait 10-30 seconds after container start and try again.');
+        }
+
         if (errorData.error_type) {
           errorDetails = `${errorData.error_type}: ${errorData.error}`;
 
@@ -260,11 +298,12 @@ const performPaddleExtraction = async (
     // Just show the final success message
     onLog('✅ PaddleOCR processing complete');
 
+    // PaddleOCR server now handles table detection and sorting
     // Transform PaddleOCR response to our OCRResult format
     // Expected PaddleOCR response format: { text: string, blocks: Array<{text, confidence, bbox}> }
     const ocrResult: OCRResult = {
       file: file.name,
-      text: result.text || result.blocks?.map((b: any) => b.text).join('\n') || '',
+      text: result.text || '',
       blocks: result.blocks || []
     };
 

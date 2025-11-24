@@ -44,19 +44,51 @@ export const checkContainerHealth = async (): Promise<DockerStatus> => {
   };
 
   try {
-    // Check if health endpoint is reachable
-    const response = await fetch('http://localhost:5000/health', {
+    // First check if health endpoint is reachable (Flask server running)
+    const healthResponse = await fetch('http://localhost:5000/health', {
       method: 'GET',
       signal: AbortSignal.timeout(3000)
     });
 
-    if (response.ok) {
-      const data = await response.json();
-      if (data.status === 'healthy') {
+    if (healthResponse.ok) {
+      const healthData = await healthResponse.json();
+      if (healthData.status === 'healthy') {
         status.dockerInstalled = true;
         status.dockerRunning = true;
         status.containerExists = true;
         status.containerRunning = true;
+
+        // Now check if PaddleOCR is actually ready to process images
+        try {
+          const readyResponse = await fetch('http://localhost:5000/ready', {
+            method: 'GET',
+            signal: AbortSignal.timeout(3000)
+          });
+
+          if (readyResponse.ok) {
+            const readyData = await readyResponse.json();
+            if (readyData.status === 'ready') {
+              status.containerHealthy = true;
+              status.message = '✅ PaddleOCR is ready to process images';
+              return status;
+            }
+          } else if (readyResponse.status === 503) {
+            // Container is running but PaddleOCR is not ready yet
+            const readyData = await readyResponse.json();
+            status.containerHealthy = false;
+            status.canAutoFix = true;
+            status.message = `⚠️ ${readyData.message || 'PaddleOCR is still initializing'}`;
+            return status;
+          }
+        } catch (readyError) {
+          // Ready endpoint failed, but health passed - container may be starting
+          status.containerHealthy = false;
+          status.canAutoFix = true;
+          status.message = '⚠️ PaddleOCR container is starting. Please wait 10-30 seconds.';
+          return status;
+        }
+
+        // Health passed but ready check inconclusive
         status.containerHealthy = true;
         status.message = '✅ PaddleOCR container is healthy';
         return status;

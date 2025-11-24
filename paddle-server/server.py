@@ -15,6 +15,7 @@ import numpy as np
 import sys
 from collections import deque
 from datetime import datetime
+import cv2
 
 # Configure logging with custom handler to capture logs
 logging.basicConfig(
@@ -54,11 +55,196 @@ ocr = PaddleOCR(
 )
 logger.info("✅ PaddleOCR initialized successfully")
 
+# Track readiness state
+ocr_ready = False
+ocr_warmup_error = None
+
+def warmup_ocr():
+    """
+    Warm up PaddleOCR by running a test inference.
+    This ensures the model is fully loaded and ready to process images.
+    """
+    global ocr_ready, ocr_warmup_error
+
+    try:
+        print("🔥 Warming up PaddleOCR with test image...", flush=True)
+        logger.info("🔥 Warming up PaddleOCR with test image...")
+
+        # Create a small test image (100x100 white background with black text)
+        test_image = np.ones((100, 100, 3), dtype=np.uint8) * 255
+        cv2.putText(test_image, "TEST", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+
+        # Run OCR on test image
+        result = ocr.ocr(test_image, cls=True)
+
+        ocr_ready = True
+        ocr_warmup_error = None
+        print("✅ PaddleOCR warmup complete - ready to process images", flush=True)
+        logger.info("✅ PaddleOCR warmup complete - ready to process images")
+        return True
+
+    except Exception as e:
+        ocr_ready = False
+        ocr_warmup_error = str(e)
+        print(f"❌ PaddleOCR warmup failed: {e}", flush=True)
+        print("⚠️  PaddleOCR is NOT ready - will retry on first request", flush=True)
+        logger.error(f"❌ PaddleOCR warmup failed: {e}")
+        logger.error("⚠️  PaddleOCR is NOT ready - will retry on first request")
+        return False
+
+# Attempt warmup on startup
+print("=" * 60, flush=True)
+print("🚀 STARTING PADDLEOCR WARMUP", flush=True)
+print("=" * 60, flush=True)
+warmup_ocr()
+print("=" * 60, flush=True)
+
+
+def detect_table_columns_histogram(blocks, image_width):
+    """
+    Detect table columns using histogram analysis of x-coordinates.
+    Returns list of column boundaries (x-coordinates).
+    """
+    if not blocks or len(blocks) < 5:
+        return []
+
+    # Extract x-coordinates (left edge of each block)
+    x_coords = []
+    for block in blocks:
+        bbox = block.get('bbox', [])
+        if bbox and len(bbox) > 0:
+            xs = [coord[0] for coord in bbox]
+            min_x = min(xs)
+            x_coords.append(min_x)
+
+    if len(x_coords) < 5:
+        return []
+
+    # Create histogram with adaptive binning
+    num_bins = max(20, image_width // 40)
+    hist, bin_edges = np.histogram(x_coords, bins=num_bins, range=(0, image_width))
+
+    # Find peaks in histogram (column starts)
+    # A peak must have at least 5% of total blocks
+    threshold = max(3, len(blocks) // 20)
+
+    peaks = []
+    for i in range(1, len(hist) - 1):
+        # Peak detection: higher than neighbors and above threshold
+        if hist[i] >= threshold and hist[i] >= hist[i-1] and hist[i] >= hist[i+1]:
+            peak_x = (bin_edges[i] + bin_edges[i+1]) / 2
+            peaks.append(peak_x)
+
+    # Merge peaks that are too close (within 50 pixels)
+    if len(peaks) > 1:
+        merged_peaks = [peaks[0]]
+        for peak in peaks[1:]:
+            if peak - merged_peaks[-1] > 50:
+                merged_peaks.append(peak)
+        peaks = merged_peaks
+
+    if len(peaks) >= 2:
+        logger.info(f"📊 Detected {len(peaks)} table columns at x-positions: {[int(x) for x in peaks]}")
+        print(f"[TABLE DETECTION] Found {len(peaks)} columns at x={[int(x) for x in peaks]}", flush=True)
+        return sorted(peaks)
+
+    print(f"[TABLE DETECTION] No multi-column table detected (found {len(peaks)} peaks)", flush=True)
+    return []
+
+
+def sort_blocks_by_table_columns(blocks, image_width):
+    """
+    Sort text blocks for table layout: detect columns, then read top-to-bottom within each column.
+    """
+    if not blocks or len(blocks) == 0:
+        return blocks
+
+    # Detect column boundaries
+    column_boundaries = detect_table_columns_histogram(blocks, image_width)
+
+    if not column_boundaries or len(column_boundaries) < 2:
+        logger.info("📐 No multi-column table detected, using standard sorting")
+        print(f"[SORTING] Using standard top-to-bottom, left-to-right sorting", flush=True)
+        # Fall back to standard top-to-bottom, left-to-right sorting
+        return sorted(blocks, key=lambda b: (b['bbox'][0][1], b['bbox'][0][0]))
+
+    # Assign each block to a column
+    blocks_with_column = []
+    for block in blocks:
+        bbox = block.get('bbox', [])
+        if not bbox or len(bbox) == 0:
+            continue
+
+        # Get block position (left edge, top edge)
+        xs = [coord[0] for coord in bbox]
+        ys = [coord[1] for coord in bbox]
+        min_x = min(xs)
+        min_y = min(ys)
+
+        # Determine which column this block belongs to
+        column_idx = 0
+        for i, boundary in enumerate(column_boundaries):
+            if min_x >= boundary:
+                column_idx = i + 1
+
+        blocks_with_column.append({
+            'block': block,
+            'column': column_idx,
+            'y': min_y,
+            'x': min_x
+        })
+
+    # Sort by column first, then by Y (top to bottom) within each column
+    sorted_blocks_data = sorted(blocks_with_column, key=lambda b: (b['column'], b['y'], b['x']))
+
+    logger.info(f"📐 Sorted {len(blocks)} blocks across {len(column_boundaries) + 1} columns (table mode)")
+    print(f"[SORTING] Sorted {len(blocks)} blocks across {len(column_boundaries) + 1} columns (table mode)", flush=True)
+
+    # Debug: show column distribution
+    column_counts = {}
+    for item in sorted_blocks_data:
+        col = item['column']
+        column_counts[col] = column_counts.get(col, 0) + 1
+    print(f"[SORTING] Column distribution: {column_counts}", flush=True)
+
+    return [item['block'] for item in sorted_blocks_data]
+
 
 @app.route('/health', methods=['GET'])
 def health():
-    """Health check endpoint"""
+    """Health check endpoint - checks if Flask server is running"""
     return jsonify({'status': 'healthy', 'service': 'PaddleOCR'}), 200
+
+
+@app.route('/ready', methods=['GET'])
+def ready():
+    """
+    Readiness check endpoint - checks if PaddleOCR is fully initialized and ready to process images.
+    Returns 200 if ready, 503 if not ready yet.
+    """
+    global ocr_ready, ocr_warmup_error
+
+    if ocr_ready:
+        return jsonify({
+            'status': 'ready',
+            'service': 'PaddleOCR',
+            'message': 'PaddleOCR is ready to process images'
+        }), 200
+    else:
+        # Try warmup again if it failed before
+        if warmup_ocr():
+            return jsonify({
+                'status': 'ready',
+                'service': 'PaddleOCR',
+                'message': 'PaddleOCR is ready to process images'
+            }), 200
+        else:
+            return jsonify({
+                'status': 'not_ready',
+                'service': 'PaddleOCR',
+                'message': 'PaddleOCR is still initializing. Please wait and try again.',
+                'error': ocr_warmup_error
+            }), 503
 
 
 @app.route('/logs', methods=['GET'])
@@ -80,10 +266,26 @@ def perform_ocr():
     import time
     start_time = time.time()
 
+    global ocr_ready, ocr_warmup_error
+
     try:
         logger.info("═══════════════════════════════════════════════════")
         logger.info("🚀 NEW OCR REQUEST RECEIVED")
         logger.info("═══════════════════════════════════════════════════")
+
+        # Check if PaddleOCR is ready
+        if not ocr_ready:
+            logger.warning("⚠️  PaddleOCR is not ready yet - attempting warmup...")
+            if not warmup_ocr():
+                error_msg = f"PaddleOCR is not ready. The container may still be initializing. Please wait a moment and try again."
+                if ocr_warmup_error:
+                    error_msg += f" Error: {ocr_warmup_error}"
+                logger.error(f"❌ {error_msg}")
+                return jsonify({
+                    'error': error_msg,
+                    'status': 'not_ready',
+                    'hint': 'Wait 10-30 seconds after container start, then try again. If the problem persists, restart the container with: docker compose restart paddleocr'
+                }), 503
 
         data = request.get_json()
 
@@ -115,6 +317,10 @@ def perform_ocr():
         logger.info("🔢 Converting PIL Image to numpy array...")
         image_np = np.array(image)
         logger.info(f"✅ Numpy array created: shape={image_np.shape}, dtype={image_np.dtype}")
+
+        # Store image dimensions for table detection
+        image_height, image_width = image_np.shape[:2]
+        logger.info(f"📐 Image dimensions: {image_width}x{image_height}")
 
         logger.info("─────────────────────────────────────────────────")
         logger.info("🔄 STARTING PADDLEOCR PROCESSING")
@@ -155,7 +361,6 @@ def perform_ocr():
         logger.info("─────────────────────────────────────────────────")
 
         blocks = []
-        full_text_lines = []
 
         # The ocr() API returns a list of pages, each page is a list of text lines
         # Each line is: [bbox_coords, (text, confidence)]
@@ -183,25 +388,32 @@ def perform_ocr():
                         'confidence': confidence,
                         'bbox': bbox
                     })
-
-                    full_text_lines.append(text)
             else:
                 logger.warning("PaddleOCR returned empty page result")
         else:
             logger.warning("PaddleOCR returned empty result")
-        
-        # Combine all text
-        full_text = '\n'.join(full_text_lines)
+
+        # Sort blocks using table-aware algorithm
+        logger.info("─────────────────────────────────────────────────")
+        logger.info("📊 SORTING TEXT BLOCKS (TABLE-AWARE)")
+        logger.info("─────────────────────────────────────────────────")
+
+        # Use table-aware sorting that detects columns
+        sorted_blocks = sort_blocks_by_table_columns(blocks, image_width)
+
+        # Combine sorted text
+        sorted_text_lines = [block['text'] for block in sorted_blocks]
+        full_text = '\n'.join(sorted_text_lines)
 
         total_elapsed = time.time() - start_time
         logger.info("═══════════════════════════════════════════════════")
-        logger.info(f"✅ SUCCESS: Extracted {len(blocks)} text blocks")
+        logger.info(f"✅ SUCCESS: Extracted {len(sorted_blocks)} text blocks")
         logger.info(f"⏱️  Total processing time: {total_elapsed:.2f}s")
         logger.info("═══════════════════════════════════════════════════")
 
         return jsonify({
             'text': full_text,
-            'blocks': blocks,
+            'blocks': sorted_blocks,
             'filename': filename
         }), 200
 
