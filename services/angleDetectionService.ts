@@ -16,16 +16,22 @@ export async function detectRotationAngle(
 ): Promise<AngleDetectionResult> {
   try {
     onProgress?.(0, 'Initializing angle detection...');
-    
+
+    // Track last progress to avoid duplicate logs
+    let lastProgress = -1;
+
     const worker = await createWorker('eng', 1, {
       logger: (m) => {
         if (m.status === 'recognizing text') {
-          onProgress?.(m.progress * 100, `Analyzing orientation: ${Math.round(m.progress * 100)}%`);
+          const currentProgress = Math.round(m.progress * 100);
+          // Only log if progress changed by at least 5% to reduce spam
+          if (currentProgress !== lastProgress && (currentProgress - lastProgress >= 5 || currentProgress === 100)) {
+            lastProgress = currentProgress;
+            onProgress?.(currentProgress, `Analyzing orientation: ${currentProgress}%`);
+          }
         }
       }
     });
-
-    onProgress?.(50, 'Detecting text orientation...');
 
     // Perform OCR to get orientation info
     const { data } = await worker.recognize(imageData);
