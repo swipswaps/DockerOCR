@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { ExtractionStatus, OCRResult, OCREngine } from './types';
 import { IconUpload, IconFile, IconTabImage, IconTabSliders, IconTabPlay, IconRefresh, IconSelectText, IconEdit } from './components/Icons';
 import Terminal from './components/Terminal';
@@ -48,6 +48,44 @@ const App: React.FC = () => {
 
   // Check API key availability
   const apiKeyConfigured = useMemo(() => hasApiKey(), []);
+
+  // Auto-rotation when engine changes to PADDLE (if image already loaded)
+  useEffect(() => {
+    const runAutoRotation = async () => {
+      // Only run if:
+      // 1. Engine is PADDLE
+      // 2. Auto-rotation is enabled
+      // 3. There's a preview image loaded
+      // 4. Not currently processing
+      if (engine === 'PADDLE' && autoRotateEnabled && previewUrl && status === ExtractionStatus.IDLE) {
+        addLog('Auto-detecting text orientation...', 'INFO');
+        try {
+          const angleResult = await detectRotationAngle(
+            previewUrl,
+            (_progress, status) => {
+              addLog(status, 'INFO');
+            }
+          );
+
+          if (angleResult.confidence > 0.5 && angleResult.angle !== 0) {
+            addLog(`Detected rotation: ${angleResult.angle}° - auto-correcting...`, 'SUCCESS');
+            const rotatedImage = await rotateImage(previewUrl, angleResult.angle);
+            setPreviewUrl(rotatedImage);
+            addLog(`Image auto-rotated ${angleResult.angle}° for optimal OCR`, 'SUCCESS');
+          } else if (angleResult.angle === 0) {
+            addLog('No rotation correction needed', 'INFO');
+          } else {
+            addLog(`Low confidence (${(angleResult.confidence * 100).toFixed(0)}%) - skipping auto-rotation`, 'WARN');
+          }
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          addLog(`Auto-rotation failed: ${errorMsg}`, 'WARN');
+        }
+      }
+    };
+
+    runAutoRotation();
+  }, [engine, autoRotateEnabled, previewUrl, status, addLog]);
 
   const processFileSelection = useCallback(async (file: File) => {
     setSelectedFile(file);
