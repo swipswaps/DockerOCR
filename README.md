@@ -19,19 +19,19 @@
 
 ### Main Interface
 ![Main Interface](screenshots/01-main-interface.png)
-*Clean, modern dark theme interface with drag-and-drop file upload*
+*Clean, modern dark theme interface with three-panel layout and drag-and-drop file upload*
 
 ### Image Editor with Controls
 ![Editor Tab](screenshots/03-editor-tab.png)
-*Live image preview with rotation, flip, filters, and zoom controls*
+*Editor tab showing live image preview with rotation, flip, filters, zoom, and crop controls*
 
 ### OCR Processing
 ![Extraction Running](screenshots/06-extraction-running.png)
-*Real-time terminal logs showing Docker container status during OCR extraction*
+*Process tab with real-time terminal logs showing PaddleOCR Docker container status during extraction*
 
-### Results View
-![Results JSON](screenshots/08-results-xlsx.png)
-*Extracted text with multiple export formats: JSON, Text, CSV, XLSX, SQL*
+### Results View - XLSX Export
+![Results XLSX](screenshots/08-results-xlsx.png)
+*Results panel showing XLSX export format with structured data ready for Excel download*
 
 </div>
 
@@ -161,7 +161,7 @@ The application has a **two-column layout**:
    - HEIC files are automatically converted to PNG
 
    ![Source Tab](screenshots/02-source-tab.png)
-   *Source tab showing uploaded HEIC file with automatic conversion*
+   *Source tab after uploading HEIC file - shows file info and conversion status*
 
 2. **Editor Tab** ✏️
    - **Top Half**: Live image preview with zoom/pan
@@ -175,10 +175,10 @@ The application has a **two-column layout**:
    - **Text Mode**: After OCR, switch to text overlay mode to see bounding boxes
 
    ![Editor Tab](screenshots/03-editor-tab.png)
-   *Editor tab with live preview and comprehensive image controls*
+   *Editor tab with live image preview (top) and control panel (bottom) showing all transformation options*
 
    ![Image Rotated](screenshots/04-image-rotated.png)
-   *Image rotation - may be applied before OCR extraction*
+   *Image after 90° rotation - transformations are applied to the image sent to OCR*
 
 3. **Process Tab** ▶️
    - **OCR Engine Selector**: Choose between Gemini or PaddleOCR
@@ -190,13 +190,13 @@ The application has a **two-column layout**:
      - Error messages with troubleshooting hints
 
    ![Process Tab](screenshots/05-process-tab.png)
-   *Process tab with OCR engine selector and terminal ready for extraction*
+   *Process tab before extraction - OCR engine selector (PaddleOCR selected) and empty terminal*
 
    ![Extraction Running](screenshots/06-extraction-running.png)
-   *Real-time Docker logs streaming during OCR processing*
+   *During extraction - terminal shows real-time logs from PaddleOCR Docker container*
 
    ![Extraction Complete](screenshots/07-extraction-complete.png)
-   *Successful extraction with detailed logs and processing time*
+   *After extraction - terminal shows success message with processing time and extracted text count*
 
 #### **Right Column: Results View**
 
@@ -210,8 +210,8 @@ After OCR extraction, view results in multiple formats:
 
 Each tab has a **Copy** button to copy content to clipboard.
 
-![Results View](screenshots/08-results-json.png)
-*Results view showing extracted text blocks with confidence scores and bounding boxes in JSON format*
+![Results View - JSON Format](screenshots/08-results-json.png)
+*Results panel in JSON tab - shows extracted text with confidence scores, bounding box coordinates, and structured data*
 
 ### Workflow Example
 
