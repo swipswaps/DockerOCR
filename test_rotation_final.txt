@@ -1,0 +1,86 @@
+Traceback (most recent call last):
+  File "/home/owner/Documents/sunelec/DockerOCR/test_prove_rotation_issue.py", line 47, in main
+    driver.get("http://localhost:3000")
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/owner/.local/lib/python3.14/site-packages/selenium/webdriver/remote/webdriver.py", line 483, in get
+    self.execute(Command.GET, {"url": url})
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/owner/.local/lib/python3.14/site-packages/selenium/webdriver/remote/webdriver.py", line 458, in execute
+    self.error_handler.check_response(response)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/home/owner/.local/lib/python3.14/site-packages/selenium/webdriver/remote/errorhandler.py", line 233, in check_response
+    raise exception_class(message, screen, stacktrace)
+selenium.common.exceptions.WebDriverException: Message: unknown error: net::ERR_CONNECTION_REFUSED
+  (Session info: chrome=142.0.7444.175)
+Stacktrace:
+#0 0x558b487cd8ee <unknown>
+#1 0x558b4815d07b <unknown>
+#2 0x558b48159e0e <unknown>
+#3 0x558b481453e6 <unknown>
+#4 0x558b4814737a <unknown>
+#5 0x558b481457b4 <unknown>
+#6 0x558b48144f22 <unknown>
+#7 0x558b48144e72 <unknown>
+#8 0x558b4814314b <unknown>
+#9 0x558b48143484 <unknown>
+#10 0x558b48161209 <unknown>
+#11 0x558b481f9eee <unknown>
+#12 0x558b481d74e2 <unknown>
+#13 0x558b481f972a <unknown>
+#14 0x558b481d72b3 <unknown>
+#15 0x558b481a13a8 <unknown>
+#16 0x558b481a2071 <unknown>
+#17 0x558b48796ae0 <unknown>
+#18 0x558b48799ede <unknown>
+#19 0x558b48799958 <unknown>
+#20 0x558b4879a365 <unknown>
+#21 0x558b48780326 <unknown>
+#22 0x558b4879a6ea <unknown>
+#23 0x558b4876898a <unknown>
+#24 0x558b487b9f95 <unknown>
+#25 0x558b487ba1c6 <unknown>
+#26 0x558b487cc4a5 <unknown>
+#27 0x7f043e4df464 start_thread
+#28 0x7f043e5625ac __clone3
+
+✅ Found HEIC file: /home/owner/Downloads/IMG_0372.heic
+📊 File size: 1.39 MB
+
+🌐 Opening http://localhost:3000...
+
+❌ Test failed with error: Message: unknown error: net::ERR_CONNECTION_REFUSED
+  (Session info: chrome=142.0.7444.175)
+Stacktrace:
+#0 0x558b487cd8ee <unknown>
+#1 0x558b4815d07b <unknown>
+#2 0x558b48159e0e <unknown>
+#3 0x558b481453e6 <unknown>
+#4 0x558b4814737a <unknown>
+#5 0x558b481457b4 <unknown>
+#6 0x558b48144f22 <unknown>
+#7 0x558b48144e72 <unknown>
+#8 0x558b4814314b <unknown>
+#9 0x558b48143484 <unknown>
+#10 0x558b48161209 <unknown>
+#11 0x558b481f9eee <unknown>
+#12 0x558b481d74e2 <unknown>
+#13 0x558b481f972a <unknown>
+#14 0x558b481d72b3 <unknown>
+#15 0x558b481a13a8 <unknown>
+#16 0x558b481a2071 <unknown>
+#17 0x558b48796ae0 <unknown>
+#18 0x558b48799ede <unknown>
+#19 0x558b48799958 <unknown>
+#20 0x558b4879a365 <unknown>
+#21 0x558b48780326 <unknown>
+#22 0x558b4879a6ea <unknown>
+#23 0x558b4876898a <unknown>
+#24 0x558b487b9f95 <unknown>
+#25 0x558b487ba1c6 <unknown>
+#26 0x558b487cc4a5 <unknown>
+#27 0x7f043e4df464 start_thread
+#28 0x7f043e5625ac __clone3
+
+📸 Error screenshot saved: prove-rotation-error.png
+
+🔚 Closing browser...

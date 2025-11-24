@@ -43,8 +43,8 @@ def main():
     
     try:
         # Open app
-        print("\n🌐 Opening http://localhost:3001...")
-        driver.get("http://localhost:3001")
+        print("\n🌐 Opening http://localhost:3000...")
+        driver.get("http://localhost:3000")
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )

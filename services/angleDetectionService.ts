@@ -1,4 +1,4 @@
-import { createWorker } from 'tesseract.js';
+import { createWorker, PSM } from 'tesseract.js';
 
 export interface AngleDetectionResult {
   angle: number;
@@ -21,9 +21,9 @@ export async function detectRotationAngle(
     // Track last progress to avoid duplicate logs
     let lastProgress = -1;
 
-    // Create worker with OSD (Orientation and Script Detection) mode
-    // This is MUCH faster than full OCR - only detects orientation
-    const worker = await createWorker('osd', 1, {
+    // Create worker with English language model
+    // We'll use recognize() with PSM 0 (OSD only) for orientation detection
+    const worker = await createWorker('eng', 1, {
       logger: (m) => {
         if (m.status === 'recognizing text' || m.status === 'loading tesseract core') {
           const currentProgress = Math.round(m.progress * 100);
@@ -36,18 +36,35 @@ export async function detectRotationAngle(
       }
     });
 
+    // Set PSM (Page Segmentation Mode) to OSD_ONLY (Orientation and Script Detection)
+    // This is faster than full OCR as it only detects orientation
+    await worker.setParameters({
+      tessedit_pageseg_mode: PSM.OSD_ONLY,
+    });
+
     onProgress?.(50, 'Analyzing image orientation...');
 
-    // Use detect() for OSD mode - much faster than recognize()
-    const { data } = await worker.detect(imageData);
+    // Use recognize() but with PSM OSD_ONLY it will only do orientation detection
+    const { data } = await worker.recognize(imageData);
 
     await worker.terminate();
 
-    // Tesseract OSD provides orientation information
-    // orientation_degrees: 0, 90, 180, or 270
-    // orientation_confidence: 0-100
-    const detectedAngle = (data as any).orientation_degrees || 0;
-    const confidence = ((data as any).orientation_confidence || 0) / 100; // Convert to 0-1 range
+    // Parse the OSD (Orientation and Script Detection) output
+    // The data.osd contains text like "Orientation: 0\nRotate: 90\n..."
+    const osdText = data.osd || '';
+
+    // Extract rotation angle from OSD output
+    // Format: "Rotate: 90" means image needs 90° rotation to be upright
+    const rotateMatch = osdText.match(/Rotate:\s*(\d+)/);
+    const detectedAngle = rotateMatch ? parseInt(rotateMatch[1], 10) : 0;
+
+    // Extract orientation confidence if available
+    // Format: "Orientation confidence: 12.34"
+    const confMatch = osdText.match(/Orientation confidence:\s*([\d.]+)/);
+    const rawConfidence = confMatch ? parseFloat(confMatch[1]) : 10;
+
+    // Tesseract OSD confidence is typically 0-15 scale, normalize to 0-1
+    const confidence = Math.min(rawConfidence / 15, 1.0);
 
     onProgress?.(100, `Detected rotation: ${detectedAngle}° (confidence: ${(confidence * 100).toFixed(0)}%)`);
 

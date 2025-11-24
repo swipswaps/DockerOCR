@@ -481,7 +481,7 @@ const App: React.FC = () => {
   useKeyboardShortcuts(shortcuts, shortcutsEnabled);
 
   return (
-    <div className="min-h-screen flex flex-col font-sans text-gray-300 selection:bg-emerald-500/30 overflow-x-hidden">
+    <div className="min-h-screen w-screen flex flex-col font-sans text-gray-300 selection:bg-emerald-500/30 overflow-x-hidden">
       {/* Header */}
       <header className="h-14 border-b border-gray-800 bg-gray-950 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-10">
         <div className="flex items-center space-x-2">
@@ -511,10 +511,10 @@ const App: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col lg:flex-row p-2 lg:p-4 gap-4 w-full max-w-[100vw]">
-        
+      <main className="flex-1 flex flex-col lg:flex-row p-2 lg:p-4 gap-4 w-full max-w-full">
+
         {/* Left Column: Tabbed Interface */}
-        <div className="w-full lg:w-1/2 flex flex-col bg-gray-900/50 rounded-xl border border-gray-800 overflow-hidden shrink-0 min-h-[600px] lg:min-h-0 max-w-full">
+        <div className="w-full lg:w-1/2 flex flex-col bg-gray-900/50 rounded-xl border border-gray-800 overflow-hidden min-w-0 min-h-[600px] lg:min-h-0">
           
           {/* Tab Navigation */}
           <div className="flex border-b border-gray-800 bg-gray-900">
@@ -758,7 +758,7 @@ const App: React.FC = () => {
         </div>
 
         {/* Right Column: Results */}
-        <div className="w-full lg:w-1/2 flex flex-col min-h-[500px] lg:min-h-0 max-w-full overflow-hidden">
+        <div className="w-full lg:w-1/2 flex flex-col min-h-[500px] lg:min-h-0 min-w-0 overflow-hidden">
           <ResultsView data={result} />
         </div>
 
