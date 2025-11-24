@@ -48,11 +48,20 @@ CORS(app)  # Enable CORS for frontend requests
 
 # Initialize PaddleOCR (this will download models on first run)
 logger.info("🚀 Initializing PaddleOCR...")
+print("🚀 Initializing PaddleOCR with CPU-optimized settings...", flush=True)
+
+# Use CPU-friendly settings to avoid "could not execute a primitive" errors
 ocr = PaddleOCR(
-    use_angle_cls=True,   # Enable angle classification
-    lang='en',            # English language
-    show_log=False        # Disable verbose logging
+    use_angle_cls=True,        # Enable angle classification
+    lang='en',                 # English language
+    show_log=False,            # Disable verbose logging
+    use_gpu=False,             # Explicitly use CPU
+    enable_mkldnn=False,       # Disable MKL-DNN optimization (can cause issues)
+    cpu_threads=1,             # Use single thread to avoid race conditions
+    use_tensorrt=False,        # Disable TensorRT
+    use_mp=False,              # Disable multiprocessing
 )
+print("✅ PaddleOCR initialized successfully", flush=True)
 logger.info("✅ PaddleOCR initialized successfully")
 
 # Track readiness state
@@ -326,34 +335,98 @@ def perform_ocr():
         logger.info("🔄 STARTING PADDLEOCR PROCESSING")
         logger.info("─────────────────────────────────────────────────")
 
-        try:
-            # Use the older ocr() API which is more stable
-            logger.info("🚀 Loading PP-OCRv4 detection model...")
-            logger.info("⏳ This may take a moment on first run or with large images...")
+        # Retry logic for "could not execute a primitive" error
+        max_retries = 3
+        retry_delay = 1  # seconds
+        result = None
 
-            result = ocr.ocr(image_np, cls=True)
+        for attempt in range(max_retries):
+            try:
+                if attempt > 0:
+                    logger.info(f"🔄 Retry attempt {attempt + 1}/{max_retries} after {retry_delay}s delay...")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
 
-            elapsed = time.time() - start_time
-            logger.info(f"✅ PaddleOCR detection complete in {elapsed:.2f}s")
+                # Use the older ocr() API which is more stable
+                logger.info("🚀 Loading PP-OCRv4 detection model...")
+                logger.info("⏳ This may take a moment on first run or with large images...")
 
-            # Debug: Log the result structure
-            logger.info(f"📊 Result type: {type(result)}, length: {len(result) if result else 0}")
-            if result and len(result) > 0:
-                logger.info(f"📄 First page has {len(result[0])} text lines")
-                logger.info("🔍 Running classification & text recognition heads...")
-        except Exception as e:
-            elapsed = time.time() - start_time
-            logger.error("═══════════════════════════════════════════════════")
-            logger.error(f"❌ PADDLEOCR FAILED after {elapsed:.2f}s")
-            logger.error(f"❌ Error type: {type(e).__name__}")
-            logger.error(f"❌ Error message: {str(e)}")
-            logger.error("═══════════════════════════════════════════════════")
-            import traceback
-            full_traceback = traceback.format_exc()
-            logger.error("📋 FULL TRACEBACK:")
-            logger.error(full_traceback)
-            logger.error("═══════════════════════════════════════════════════")
-            raise
+                result = ocr.ocr(image_np, cls=True)
+
+                elapsed = time.time() - start_time
+                logger.info(f"✅ PaddleOCR detection complete in {elapsed:.2f}s")
+
+                # Debug: Log the result structure
+                logger.info(f"📊 Result type: {type(result)}, length: {len(result) if result else 0}")
+                if result and len(result) > 0:
+                    logger.info(f"📄 First page has {len(result[0])} text lines")
+                    logger.info("🔍 Running classification & text recognition heads...")
+
+                # Success - break out of retry loop
+                break
+
+            except RuntimeError as e:
+                elapsed = time.time() - start_time
+                error_msg = str(e)
+
+                # Check if it's the "could not execute a primitive" error
+                if "could not execute a primitive" in error_msg:
+                    logger.warning("═══════════════════════════════════════════════════")
+                    logger.warning(f"⚠️  PADDLEOCR RUNTIME ERROR (attempt {attempt + 1}/{max_retries})")
+                    logger.warning(f"⚠️  Error: {error_msg}")
+                    logger.warning("═══════════════════════════════════════════════════")
+
+                    if attempt < max_retries - 1:
+                        logger.warning(f"🔄 Will retry in {retry_delay}s...")
+                        continue
+                    else:
+                        logger.error("═══════════════════════════════════════════════════")
+                        logger.error(f"❌ PADDLEOCR FAILED after {max_retries} attempts ({elapsed:.2f}s total)")
+                        logger.error(f"❌ Error: {error_msg}")
+                        logger.error("═══════════════════════════════════════════════════")
+                        logger.error("💡 TROUBLESHOOTING:")
+                        logger.error("   1. This error is often caused by CPU instruction set incompatibility")
+                        logger.error("   2. Try restarting the container: docker compose restart paddleocr")
+                        logger.error("   3. If problem persists, rebuild: docker compose up -d --build paddleocr")
+                        logger.error("   4. Check Docker resource limits (CPU/Memory)")
+                        logger.error("   5. Consider using Gemini Vision API as alternative")
+                        logger.error("═══════════════════════════════════════════════════")
+                        import traceback
+                        full_traceback = traceback.format_exc()
+                        logger.error("📋 FULL TRACEBACK:")
+                        logger.error(full_traceback)
+                        logger.error("═══════════════════════════════════════════════════")
+                        raise
+                else:
+                    # Different RuntimeError - don't retry
+                    logger.error("═══════════════════════════════════════════════════")
+                    logger.error(f"❌ PADDLEOCR RUNTIME ERROR after {elapsed:.2f}s")
+                    logger.error(f"❌ Error: {error_msg}")
+                    logger.error("═══════════════════════════════════════════════════")
+                    import traceback
+                    full_traceback = traceback.format_exc()
+                    logger.error("📋 FULL TRACEBACK:")
+                    logger.error(full_traceback)
+                    logger.error("═══════════════════════════════════════════════════")
+                    raise
+
+            except Exception as e:
+                elapsed = time.time() - start_time
+                logger.error("═══════════════════════════════════════════════════")
+                logger.error(f"❌ PADDLEOCR FAILED after {elapsed:.2f}s")
+                logger.error(f"❌ Error type: {type(e).__name__}")
+                logger.error(f"❌ Error message: {str(e)}")
+                logger.error("═══════════════════════════════════════════════════")
+                import traceback
+                full_traceback = traceback.format_exc()
+                logger.error("📋 FULL TRACEBACK:")
+                logger.error(full_traceback)
+                logger.error("═══════════════════════════════════════════════════")
+                raise
+
+        # Check if we got a result
+        if result is None:
+            raise RuntimeError("PaddleOCR failed to produce a result after all retries")
 
         # Transform PaddleOCR result to our format
         logger.info("─────────────────────────────────────────────────")
