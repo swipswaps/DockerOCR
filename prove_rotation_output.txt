@@ -1,0 +1,28 @@
+✅ Found HEIC file: /home/owner/Downloads/IMG_0372.heic
+📊 File size: 1.39 MB
+
+🌐 Opening http://localhost:3001...
+✅ App loaded
+
+📁 Uploading HEIC file...
+✅ File uploaded
+
+⏳ Waiting for HEIC conversion...
+
+📸 Capturing preview image...
+📐 Preview dimensions: 3024x4032
+⚠️ IMAGE APPEARS ROTATED: width (3024) < height (4032)
+   Aspect ratio: 0.75 (portrait orientation)
+
+🚀 Triggering OCR extraction to test auto-rotation...
+✅ Clicked Process tab
+✅ Selected PaddleOCR
+✅ Clicked Start Extraction
+
+📋 Checking browser console logs AFTER OCR...
+  Total console entries: 5
+  ❌ NO ROTATION-RELATED LOGS FOUND!
+
+📸 Screenshot saved: prove-rotation-issue.png
+
+🔚 Closing browser...

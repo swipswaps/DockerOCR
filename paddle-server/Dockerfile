@@ -19,7 +19,8 @@ RUN pip install --no-cache-dir \
     paddleocr==2.7.3 \
     flask==3.0.0 \
     flask-cors==4.0.0 \
-    pillow
+    pillow \
+    opencv-python-headless==4.8.1.78
 
 # Copy server code
 COPY server.py .

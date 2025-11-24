@@ -11,6 +11,7 @@ import LoadingSpinner from './components/LoadingSpinner';
 import HelpModal from './components/HelpModal';
 import DockerSetupHelper from './components/DockerSetupHelper';
 import { performOCRExtraction } from './services/ocrService';
+import { detectRotationAngle, rotateImage } from './services/angleDetectionService';
 import { DEFAULT_VIEW_STATE, PROCESSING_DELAY } from './constants';
 import { useImageFilters } from './hooks/useImageFilters';
 import { useLogger } from './hooks/useLogger';
@@ -95,10 +96,36 @@ const App: React.FC = () => {
           });
 
           // Store the converted PNG as preview
-          // User can manually rotate using the rotation controls if needed
           setPreviewUrl(dataUrl);
           setIsConverting(false);
           addLog('HEIC conversion complete. Preview and filters enabled.', 'SUCCESS');
+
+          // Auto-detect rotation if enabled and using PaddleOCR
+          if (autoRotateEnabled && engine === 'PADDLE') {
+            addLog('Auto-detecting text orientation...', 'INFO');
+            try {
+              const angleResult = await detectRotationAngle(
+                dataUrl,
+                (_progress, status) => {
+                  addLog(status, 'INFO');
+                }
+              );
+
+              if (angleResult.confidence > 0.5 && angleResult.angle !== 0) {
+                addLog(`Detected rotation: ${angleResult.angle}° - auto-correcting...`, 'SUCCESS');
+                const rotatedImage = await rotateImage(dataUrl, angleResult.angle);
+                setPreviewUrl(rotatedImage);
+                addLog(`Image auto-rotated ${angleResult.angle}° for optimal OCR`, 'SUCCESS');
+              } else if (angleResult.angle === 0) {
+                addLog('No rotation correction needed', 'INFO');
+              } else {
+                addLog(`Low confidence (${(angleResult.confidence * 100).toFixed(0)}%) - skipping auto-rotation`, 'WARN');
+              }
+            } catch (error) {
+              const errorMsg = error instanceof Error ? error.message : String(error);
+              addLog(`Auto-rotation failed: ${errorMsg}`, 'WARN');
+            }
+          }
         } catch (readError) {
           setIsConverting(false);
           addLog('Error reading converted HEIC blob.', 'ERROR');
@@ -128,6 +155,33 @@ const App: React.FC = () => {
         setPreviewUrl(dataUrl);
         addLog(`File loaded: ${file.name} (${formatFileSize(file.size)})`, 'INFO');
         addLog(`Format detected: ${getFileFormat(file)}`, 'INFO');
+
+        // Auto-detect rotation if enabled and using PaddleOCR
+        if (autoRotateEnabled && engine === 'PADDLE') {
+          addLog('Auto-detecting text orientation...', 'INFO');
+          try {
+            const angleResult = await detectRotationAngle(
+              dataUrl,
+              (_progress, status) => {
+                addLog(status, 'INFO');
+              }
+            );
+
+            if (angleResult.confidence > 0.5 && angleResult.angle !== 0) {
+              addLog(`Detected rotation: ${angleResult.angle}° - auto-correcting...`, 'SUCCESS');
+              const rotatedImage = await rotateImage(dataUrl, angleResult.angle);
+              setPreviewUrl(rotatedImage);
+              addLog(`Image auto-rotated ${angleResult.angle}° for optimal OCR`, 'SUCCESS');
+            } else if (angleResult.angle === 0) {
+              addLog('No rotation correction needed', 'INFO');
+            } else {
+              addLog(`Low confidence (${(angleResult.confidence * 100).toFixed(0)}%) - skipping auto-rotation`, 'WARN');
+            }
+          } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            addLog(`Auto-rotation failed: ${errorMsg}`, 'WARN');
+          }
+        }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         addLog(`Failed to load file: ${errorMessage}`, 'ERROR');
@@ -298,8 +352,7 @@ const App: React.FC = () => {
           if (engine === 'PADDLE') {
             setShowDockerSetup(true);
           }
-        },
-        autoRotateEnabled // Pass auto-rotation setting
+        }
       );
       setResult(data);
       setStatus(ExtractionStatus.COMPLETE);
@@ -420,7 +473,7 @@ const App: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden p-2 lg:p-4 gap-4 max-w-full">
+      <main className="flex-1 flex flex-col lg:flex-row p-2 lg:p-4 gap-4 w-full max-w-[100vw]">
         
         {/* Left Column: Tabbed Interface */}
         <div className="w-full lg:w-1/2 flex flex-col bg-gray-900/50 rounded-xl border border-gray-800 overflow-hidden shrink-0 min-h-[600px] lg:min-h-0 max-w-full">

@@ -7,7 +7,8 @@ export interface AngleDetectionResult {
 }
 
 /**
- * Detect the rotation angle of text in an image using Tesseract.js
+ * Detect the rotation angle of text in an image using Tesseract.js OSD (Orientation and Script Detection)
+ * This is MUCH faster than full OCR as it only detects orientation without reading text
  * Returns the angle needed to correct the rotation (0, 90, 180, or 270 degrees)
  */
 export async function detectRotationAngle(
@@ -15,37 +16,40 @@ export async function detectRotationAngle(
   onProgress?: (progress: number, status: string) => void
 ): Promise<AngleDetectionResult> {
   try {
-    onProgress?.(0, 'Initializing angle detection...');
+    onProgress?.(0, 'Initializing orientation detection...');
 
     // Track last progress to avoid duplicate logs
     let lastProgress = -1;
 
-    const worker = await createWorker('eng', 1, {
+    // Create worker with OSD (Orientation and Script Detection) mode
+    // This is MUCH faster than full OCR - only detects orientation
+    const worker = await createWorker('osd', 1, {
       logger: (m) => {
-        if (m.status === 'recognizing text') {
+        if (m.status === 'recognizing text' || m.status === 'loading tesseract core') {
           const currentProgress = Math.round(m.progress * 100);
-          // Only log if progress changed by at least 5% to reduce spam
-          if (currentProgress !== lastProgress && (currentProgress - lastProgress >= 5 || currentProgress === 100)) {
+          // Only log if progress changed by at least 10% to reduce spam
+          if (currentProgress !== lastProgress && (currentProgress - lastProgress >= 10 || currentProgress === 100)) {
             lastProgress = currentProgress;
-            onProgress?.(currentProgress, `Analyzing orientation: ${currentProgress}%`);
+            onProgress?.(currentProgress, `Detecting orientation: ${currentProgress}%`);
           }
         }
       }
     });
 
-    // Perform OCR to get orientation info
-    const { data } = await worker.recognize(imageData);
+    onProgress?.(50, 'Analyzing image orientation...');
+
+    // Use detect() for OSD mode - much faster than recognize()
+    const { data } = await worker.detect(imageData);
 
     await worker.terminate();
 
-    // Tesseract provides orientation information
+    // Tesseract OSD provides orientation information
     // orientation_degrees: 0, 90, 180, or 270
     // orientation_confidence: 0-100
-    // Note: TypeScript types may not include these properties, but they exist at runtime
     const detectedAngle = (data as any).orientation_degrees || 0;
     const confidence = ((data as any).orientation_confidence || 0) / 100; // Convert to 0-1 range
 
-    onProgress?.(100, `Detected rotation: ${detectedAngle}°`);
+    onProgress?.(100, `Detected rotation: ${detectedAngle}° (confidence: ${(confidence * 100).toFixed(0)}%)`);
 
     // Calculate the correction angle (inverse of detected rotation)
     // If text is rotated 90° clockwise, we need to rotate 270° to correct it
@@ -65,7 +69,9 @@ export async function detectRotationAngle(
     };
   } catch (error) {
     console.error('Angle detection failed:', error);
-    
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    onProgress?.(100, `Orientation detection failed: ${errorMsg}`);
+
     // Fallback to manual (no rotation)
     return {
       angle: 0,

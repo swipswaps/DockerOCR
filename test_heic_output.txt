@@ -1,0 +1,2950 @@
+✅ Found HEIC file: /home/owner/Downloads/IMG_0372.heic
+📊 File size: 1.39 MB
+
+🌐 Opening http://localhost:3001...
+✅ App loaded
+
+📁 Uploading HEIC file...
+✅ File uploaded
+
+⏳ Waiting for HEIC conversion...
+⚠️ Timeout waiting for HEIC conversion message
+📸 Screenshot saved: heic-conversion-timeout.png
+
+🔧 Clicking Process tab...
+✅ Process tab clicked
+
+🔧 Selecting PaddleOCR from dropdown...
+✅ PaddleOCR selected from dropdown
+
+🔍 Checking auto-rotation toggle...
+⚠️ Auto-rotation toggle not visible (might be using Gemini)
+
+🚀 Starting OCR extraction...
+✅ Found extraction button with selector: //button[contains(., 'Start Extraction')]
+✅ Clicked 'Start Extraction'
+
+📋 MONITORING LOGS:
+════════════════════════════════════════════════════════════════════════════════
+{
+  "file": "IMG_0372.heic",
+  "text": "Glasses (Raw Materials)-for\nPanels (90,284 Units/\nUnits)\nSolar Energy\nTracking.System-Used (27\nMaking PV Modules-Used\nAluminum Frames & Temper\nSolar Energy\n11,307 Units)\nJA Solar 300-385w Solar Panels\n34.456MW)\nCanadian Solar 370-395w Solar\nStorages (66 Units)\nTigo Energy Solar El Battery\nSolar Energy\nNEXTracker Torque Tubes Solar\nCombiner Box & Accessories\nSolar Energy\n(20,854Units)\n(296 Items)\nKACO Inverters,\nSolar Energy\nUnused\nUnused\nUnused\nSmart Breakers\nPanels-Used (5,000\nFirst Solar 470w Solar\nHanwha Q Cells -Q.Plus\nSolar Energy\nSolar Energy\nSolar Panels (1,364 Units\nThornova Solar 500w\nSystem (01Full Solar\n40 Spare Parts Solar\nSolar Turbine Centaur\nSetup)\nSolar Enerqy\nPanels (20,928Panels)\nSolar Energy\nInverters (154 Units)\nSolar Energy\nTurbines\nUnused (1263 Pcs\nUnits)\nOgarTech 15Kw Off-\nL-G4.2 345W Solar\n/2 Containers)\nTurbines Incorporated\nOmnik 2-20KW Solar\nGrid Solar Power\nUnused\nSolarEdge PV\nOptimizers (1,230\nUnits)\n40&Sch 80 (82,500\nElectrical Conduit Sch\nElectrical Supplies\nSolar Energy\nSiemens MV3150kVA\nSwitchgears (02\nFeet)\nSolar Energy\nUnits)\nAccessories (416\nUnused\nInverters and\nSungrow SH5 Solar\nUnits)\nSchneider\nTransformers with\n(7,000 Units)\nLong Input Cable\nOptimizer (2 Modules)\nHuawei 1100w\nTransformers\nUnused\nUnused\nUnused\nSolar Energy\nHybrid Inverters (210\nSTP 8.0 Smart Energy\nSMA Sunny Tripower\nPanels (146 Units)\nSolar/Jinko/DMEGC\n4.4M Battery Inverter\nInverter (31 Units)\nSolar Energy\nSolar Energy\nSolar Energy\nMarced\nUnits)\nHypontech HES 5kW\n375-590W Solar\nSolar Energy\n(29 Units)\n17KTL-M53-Phase\nHuaweI SuINZuuu-\n(SE) Solar Inverters\nSMA Sunny Island\n(41Units)\nJA\nUnused\nUnused\nUnused\nUnused\nMV90-350kcmil\n1/3CN Aluminum\n(7,500 Feet)\nConductor Cable\nSolar Energy\nDamaged\n(720 units)-Partially\n615/LB Solar Panels\nJA Solar JAM66D45-\nUnits)-Unused\nSolar Energy\nSolar Inverters (141\n Solar String Inverters\nSolar Energy\nSchneider 50kW\n(92 Units)\nInsurance Claim\nUnused\nSolar Energy\nKehuaTech 100kW\nUnits)\nHybrid Inverters (210\nHypontech HES 5kW\nUnused\nWarrantee\nUnused with",
+  "blocks": [
+    {
+      "bbox": [
+        [
+          1486,
+          72
+        ],
+        [
+          1559,
+          71
+        ],
+        [
+          1568,
+          755
+        ],
+        [
+          1495,
+          756
+        ]
+      ],
+      "confidence": 0.956858217716217,
+      "text": "Glasses (Raw Materials)-for"
+    },
+    {
+      "bbox": [
+        [
+          2336,
+          73
+        ],
+        [
+          2405,
+          71
+        ],
+        [
+          2423,
+          629
+        ],
+        [
+          2355,
+          631
+        ]
+      ],
+      "confidence": 0.9267073273658752,
+      "text": "Panels (90,284 Units/"
+    },
+    {
+      "bbox": [
+        [
+          525,
+          74
+        ],
+        [
+          585,
+          78
+        ],
+        [
+          575,
+          262
+        ],
+        [
+          514,
+          258
+        ]
+      ],
+      "confidence": 0.949924647808075,
+      "text": "Units)"
+    },
+    {
+      "bbox": [
+        [
+          435,
+          75
+        ],
+        [
+          508,
+          78
+        ],
+        [
+          493,
+          396
+        ],
+        [
+          420,
+          393
+        ]
+      ],
+      "confidence": 0.9757277369499207,
+      "text": "Solar Energy"
+    },
+    {
+      "bbox": [
+        [
+          580,
+          76
+        ],
+        [
+          653,
+          75
+        ],
+        [
+          657,
+          751
+        ],
+        [
+          584,
+          752
+        ]
+      ],
+      "confidence": 0.9553667902946472,
+      "text": "Tracking.System-Used (27"
+    },
+    {
+      "bbox": [
+        [
+          1426,
+          76
+        ],
+        [
+          1486,
+          75
+        ],
+        [
+          1495,
+          730
+        ],
+        [
+          1435,
+          731
+        ]
+      ],
+      "confidence": 0.9544844031333923,
+      "text": "Making PV Modules-Used"
+    },
+    {
+      "bbox": [
+        [
+          1550,
+          76
+        ],
+        [
+          1623,
+          75
+        ],
+        [
+          1637,
+          755
+        ],
+        [
+          1564,
+          756
+        ]
+      ],
+      "confidence": 0.9553783535957336,
+      "text": "Aluminum Frames & Temper"
+    },
+    {
+      "bbox": [
+        [
+          2182,
+          76
+        ],
+        [
+          2259,
+          75
+        ],
+        [
+          2264,
+          386
+        ],
+        [
+          2187,
+          387
+        ]
+      ],
+      "confidence": 0.9767153859138489,
+      "text": "Solar Energy"
+    },
+    {
+      "bbox": [
+        [
+          1876,
+          77
+        ],
+        [
+          1949,
+          75
+        ],
+        [
+          1959,
+          410
+        ],
+        [
+          1886,
+          412
+        ]
+      ],
+      "confidence": 0.9066845178604126,
+      "text": "11,307 Units)"
+    },
+    {
+      "bbox": [
+        [
+          1945,
+          77
+        ],
+        [
+          2014,
+          75
+        ],
+        [
+          2032,
+          864
+        ],
+        [
+          1964,
+          866
+        ]
+      ],
+      "confidence": 0.928727924823761,
+      "text": "JA Solar 300-385w Solar Panels"
+    },
+    {
+      "bbox": [
+        [
+          2272,
+          77
+        ],
+        [
+          2332,
+          75
+        ],
+        [
+          2342,
+          377
+        ],
+        [
+          2281,
+          379
+        ]
+      ],
+      "confidence": 0.9835300445556641,
+      "text": "34.456MW)"
+    },
+    {
+      "bbox": [
+        [
+          2400,
+          78
+        ],
+        [
+          2474,
+          75
+        ],
+        [
+          2505,
+          830
+        ],
+        [
+          2432,
+          833
+        ]
+      ],
+      "confidence": 0.964377760887146,
+      "text": "Canadian Solar 370-395w Solar"
+    },
+    {
+      "bbox": [
+        [
+          207,
+          79
+        ],
+        [
+          280,
+          81
+        ],
+        [
+          270,
+          563
+        ],
+        [
+          197,
+          562
+        ]
+      ],
+      "confidence": 0.9461768269538879,
+      "text": "Storages (66 Units)"
+    },
+    {
+      "bbox": [
+        [
+          275,
+          79
+        ],
+        [
+          348,
+          80
+        ],
+        [
+          339,
+          765
+        ],
+        [
+          266,
+          764
+        ]
+      ],
+      "confidence": 0.9577521085739136,
+      "text": "Tigo Energy Solar El Battery"
+    },
+    {
+      "bbox": [
+        [
+          907,
+          79
+        ],
+        [
+          976,
+          81
+        ],
+        [
+          966,
+          383
+        ],
+        [
+          897,
+          381
+        ]
+      ],
+      "confidence": 0.9608429074287415,
+      "text": "Solar Energy"
+    },
+    {
+      "bbox": [
+        [
+          662,
+          80
+        ],
+        [
+          722,
+          80
+        ],
+        [
+          722,
+          853
+        ],
+        [
+          662,
+          853
+        ]
+      ],
+      "confidence": 0.9447692632675171,
+      "text": "NEXTracker Torque Tubes Solar"
+    },
+    {
+      "bbox": [
+        [
+          1052,
+          80
+        ],
+        [
+          1112,
+          80
+        ],
+        [
+          1117,
+          785
+        ],
+        [
+          1057,
+          786
+        ]
+      ],
+      "confidence": 0.967463493347168,
+      "text": "Combiner Box & Accessories"
+    },
+    {
+      "bbox": [
+        [
+          1276,
+          80
+        ],
+        [
+          1336,
+          80
+        ],
+        [
+          1336,
+          391
+        ],
+        [
+          1276,
+          391
+        ]
+      ],
+      "confidence": 0.9830601811408997,
+      "text": "Solar Energy"
+    },
+    {
+      "bbox": [
+        [
+          1362,
+          80
+        ],
+        [
+          1422,
+          80
+        ],
+        [
+          1422,
+          433
+        ],
+        [
+          1362,
+          433
+        ]
+      ],
+      "confidence": 0.9490948915481567,
+      "text": "(20,854Units)"
+    },
+    {
+      "bbox": [
+        [
+          988,
+          84
+        ],
+        [
+          1048,
+          84
+        ],
+        [
+          1048,
+          370
+        ],
+        [
+          988,
+          370
+        ]
+      ],
+      "confidence": 0.9197261929512024,
+      "text": "(296 Items)"
+    },
+    {
+      "bbox": [
+        [
+          1125,
+          84
+        ],
+        [
+          1186,
+          84
+        ],
+        [
+          1186,
+          483
+        ],
+        [
+          1125,
+          483
+        ]
+      ],
+      "confidence": 0.945633590221405,
+      "text": "KACO Inverters,"
+    },
+    {
+      "bbox": [
+        [
+          1804,
+          84
+        ],
+        [
+          1864,
+          84
+        ],
+        [
+          1864,
+          386
+        ],
+        [
+          1804,
+          386
+        ]
+      ],
+      "confidence": 0.961229145526886,
+      "text": "Solar Energy"
+    },
+    {
+      "bbox": [
+        [
+          803,
+          101
+        ],
+        [
+          868,
+          101
+        ],
+        [
+          868,
+          273
+        ],
+        [
+          803,
+          273
+        ]
+      ],
+      "confidence": 0.9996474385261536,
+      "text": "Unused"
+    },
+    {
+      "bbox": [
+        [
+          1705,
+          101
+        ],
+        [
+          1770,
+          101
+        ],
+        [
+          1770,
+          273
+        ],
+        [
+          1705,
+          273
+        ]
+      ],
+      "confidence": 0.9996595978736877,
+      "text": "Unused"
+    },
+    {
+      "bbox": [
+        [
+          2100,
+          101
+        ],
+        [
+          2161,
+          101
+        ],
+        [
+          2161,
+          281
+        ],
+        [
+          2100,
+          281
+        ]
+      ],
+      "confidence": 0.9987675547599792,
+      "text": "Unused"
+    },
+    {
+      "bbox": [
+        [
+          1130,
+          462
+        ],
+        [
+          1190,
+          462
+        ],
+        [
+          1190,
+          840
+        ],
+        [
+          1130,
+          840
+        ]
+      ],
+      "confidence": 0.9757968187332153,
+      "text": "Smart Breakers"
+    },
+    {
+      "bbox": [
+        [
+          2392,
+          946
+        ],
+        [
+          2465,
+          945
+        ],
+        [
+          2475,
+          1490
+        ],
+        [
+          2402,
+          1491
+        ]
+      ],
+      "confidence": 0.9623016715049744,
+      "text": "Panels-Used (5,000"
+    },
+    {
+      "bbox": [
+        [
+          2461,
+          947
+        ],
+        [
+          2534,
+          944
+        ],
+        [
+          2552,
+          1510
+        ],
+        [
+          2479,
+          1513
+        ]
+      ],
+      "confidence": 0.9492588639259338,
+      "text": "First Solar 470w Solar"
+    },
+    {
+      "bbox": [
+        [
+          413,
+          949
+        ],
+        [
+          486,
+          950
+        ],
+        [
+          481,
+          1563
+        ],
+        [
+          408,
+          1562
+        ]
+      ],
+      "confidence": 0.9389742016792297,
+      "text": "Hanwha Q Cells -Q.Plus"
+    },
+    {
+      "bbox": [
+        [
+          894,
+          949
+        ],
+        [
+          967,
+          950
+        ],
+        [
+          957,
+          1303
+        ],
+        [
+          884,
+          1301
+        ]
+      ],
+      "confidence": 0.9822847247123718,
+      "text": "Solar Energy"
+    },
+    {
+      "bbox": [
+        [
+          2242,
+          949
+        ],
+        [
+          2315,
+          949
+        ],
+        [
+          2315,
+          1289
+        ],
+        [
+          2242,
+          1289
+        ]
+      ],
+      "confidence": 0.9837477207183838,
+      "text": "Solar Energy"
+    },
+    {
+      "bbox": [
+        [
+          1039,
+          950
+        ],
+        [
+          1112,
+          949
+        ],
+        [
+          1117,
+          1570
+        ],
+        [
+          1044,
+          1571
+        ]
+      ],
+      "confidence": 0.9334662556648254,
+      "text": "Solar Panels (1,364 Units"
+    },
+    {
+      "bbox": [
+        [
+          1108,
+          950
+        ],
+        [
+          1181,
+          949
+        ],
+        [
+          1186,
+          1524
+        ],
+        [
+          1113,
+          1525
+        ]
+      ],
+      "confidence": 0.9676141142845154,
+      "text": "Thornova Solar 500w"
+    },
+    {
+      "bbox": [
+        [
+          1417,
+          950
+        ],
+        [
+          1490,
+          949
+        ],
+        [
+          1495,
+          1482
+        ],
+        [
+          1422,
+          1483
+        ]
+      ],
+      "confidence": 0.9121425747871399,
+      "text": "System (01Full Solar"
+    },
+    {
+      "bbox": [
+        [
+          2014,
+          950
+        ],
+        [
+          2087,
+          949
+        ],
+        [
+          2097,
+          1490
+        ],
+        [
+          2023,
+          1491
+        ]
+      ],
+      "confidence": 0.9350506067276001,
+      "text": "40 Spare Parts Solar"
+    },
+    {
+      "bbox": [
+        [
+          2079,
+          950
+        ],
+        [
+          2152,
+          949
+        ],
+        [
+          2161,
+          1503
+        ],
+        [
+          2088,
+          1504
+        ]
+      ],
+      "confidence": 0.9698715209960938,
+      "text": "Solar Turbine Centaur"
+    },
+    {
+      "bbox": [
+        [
+          1358,
+          952
+        ],
+        [
+          1423,
+          955
+        ],
+        [
+          1412,
+          1164
+        ],
+        [
+          1348,
+          1161
+        ]
+      ],
+      "confidence": 0.9872398376464844,
+      "text": "Setup)"
+    },
+    {
+      "bbox": [
+        [
+          198,
+          953
+        ],
+        [
+          253,
+          953
+        ],
+        [
+          253,
+          1298
+        ],
+        [
+          198,
+          1298
+        ]
+      ],
+      "confidence": 0.9400014877319336,
+      "text": "Solar Enerqy"
+    },
+    {
+      "bbox": [
+        [
+          284,
+          953
+        ],
+        [
+          339,
+          953
+        ],
+        [
+          339,
+          1525
+        ],
+        [
+          284,
+          1525
+        ]
+      ],
+      "confidence": 0.9475122094154358,
+      "text": "Panels (20,928Panels)"
+    },
+    {
+      "bbox": [
+        [
+          580,
+          953
+        ],
+        [
+          645,
+          955
+        ],
+        [
+          635,
+          1294
+        ],
+        [
+          571,
+          1292
+        ]
+      ],
+      "confidence": 0.9805620312690735,
+      "text": "Solar Energy"
+    },
+    {
+      "bbox": [
+        [
+          662,
+          953
+        ],
+        [
+          735,
+          953
+        ],
+        [
+          735,
+          1466
+        ],
+        [
+          662,
+          1466
+        ]
+      ],
+      "confidence": 0.9623426795005798,
+      "text": "Inverters (154 Units)"
+    },
+    {
+      "bbox": [
+        [
+          1272,
+          953
+        ],
+        [
+          1345,
+          955
+        ],
+        [
+          1335,
+          1290
+        ],
+        [
+          1262,
+          1288
+        ]
+      ],
+      "confidence": 0.9839990735054016,
+      "text": "Solar Energy"
+    },
+    {
+      "bbox": [
+        [
+          1800,
+          953
+        ],
+        [
+          1873,
+          953
+        ],
+        [
+          1873,
+          1197
+        ],
+        [
+          1800,
+          1197
+        ]
+      ],
+      "confidence": 0.996817409992218,
+      "text": "Turbines"
+    },
+    {
+      "bbox": [
+        [
+          1886,
+          953
+        ],
+        [
+          1959,
+          953
+        ],
+        [
+          1959,
+          1436
+        ],
+        [
+          1886,
+          1436
+        ]
+      ],
+      "confidence": 0.9471210241317749,
+      "text": "Unused (1263 Pcs"
+    },
+    {
+      "bbox": [
+        [
+          2337,
+          953
+        ],
+        [
+          2397,
+          953
+        ],
+        [
+          2397,
+          1138
+        ],
+        [
+          2337,
+          1138
+        ]
+      ],
+      "confidence": 0.9304317831993103,
+      "text": "Units)"
+    },
+    {
+      "bbox": [
+        [
+          1550,
+          954
+        ],
+        [
+          1623,
+          953
+        ],
+        [
+          1628,
+          1470
+        ],
+        [
+          1555,
+          1470
+        ]
+      ],
+      "confidence": 0.9524779915809631,
+      "text": "OgarTech 15Kw Off-"
+    },
+    {
+      "bbox": [
+        [
+          348,
+          958
+        ],
+        [
+          404,
+          958
+        ],
+        [
+          404,
+          1453
+        ],
+        [
+          348,
+          1453
+        ]
+      ],
+      "confidence": 0.9284526109695435,
+      "text": "L-G4.2 345W Solar"
+    },
+    {
+      "bbox": [
+        [
+          984,
+          958
+        ],
+        [
+          1044,
+          958
+        ],
+        [
+          1044,
+          1336
+        ],
+        [
+          984,
+          1336
+        ]
+      ],
+      "confidence": 0.9468539357185364,
+      "text": "/2 Containers)"
+    },
+    {
+      "bbox": [
+        [
+          1959,
+          958
+        ],
+        [
+          2019,
+          958
+        ],
+        [
+          2019,
+          1508
+        ],
+        [
+          1959,
+          1508
+        ]
+      ],
+      "confidence": 0.9919685125350952,
+      "text": "Turbines Incorporated"
+    },
+    {
+      "bbox": [
+        [
+          739,
+          962
+        ],
+        [
+          799,
+          962
+        ],
+        [
+          799,
+          1483
+        ],
+        [
+          739,
+          1483
+        ]
+      ],
+      "confidence": 0.9148654937744141,
+      "text": "Omnik 2-20KW Solar"
+    },
+    {
+      "bbox": [
+        [
+          1495,
+          962
+        ],
+        [
+          1555,
+          962
+        ],
+        [
+          1555,
+          1407
+        ],
+        [
+          1495,
+          1407
+        ]
+      ],
+      "confidence": 0.9685161709785461,
+      "text": "Grid Solar Power"
+    },
+    {
+      "bbox": [
+        [
+          1701,
+          970
+        ],
+        [
+          1778,
+          970
+        ],
+        [
+          1778,
+          1176
+        ],
+        [
+          1701,
+          1176
+        ]
+      ],
+      "confidence": 0.9656475186347961,
+      "text": "Unused"
+    },
+    {
+      "bbox": [
+        [
+          2512,
+          1724
+        ],
+        [
+          2590,
+          1721
+        ],
+        [
+          2604,
+          2128
+        ],
+        [
+          2526,
+          2130
+        ]
+      ],
+      "confidence": 0.968350887298584,
+      "text": "SolarEdge PV"
+    },
+    {
+      "bbox": [
+        [
+          2452,
+          1727
+        ],
+        [
+          2525,
+          1726
+        ],
+        [
+          2535,
+          2179
+        ],
+        [
+          2462,
+          2180
+        ]
+      ],
+      "confidence": 0.946505069732666,
+      "text": "Optimizers (1,230"
+    },
+    {
+      "bbox": [
+        [
+          2393,
+          1735
+        ],
+        [
+          2453,
+          1735
+        ],
+        [
+          2453,
+          1924
+        ],
+        [
+          2393,
+          1924
+        ]
+      ],
+      "confidence": 0.978069543838501,
+      "text": "Units)"
+    },
+    {
+      "bbox": [
+        [
+          1967,
+          1736
+        ],
+        [
+          2040,
+          1734
+        ],
+        [
+          2058,
+          2279
+        ],
+        [
+          1985,
+          2281
+        ]
+      ],
+      "confidence": 0.9314351081848145,
+      "text": "40&Sch 80 (82,500"
+    },
+    {
+      "bbox": [
+        [
+          2040,
+          1736
+        ],
+        [
+          2113,
+          1734
+        ],
+        [
+          2131,
+          2296
+        ],
+        [
+          2058,
+          2298
+        ]
+      ],
+      "confidence": 0.9724319577217102,
+      "text": "Electrical Conduit Sch"
+    },
+    {
+      "bbox": [
+        [
+          1821,
+          1739
+        ],
+        [
+          1894,
+          1739
+        ],
+        [
+          1899,
+          2213
+        ],
+        [
+          1826,
+          2214
+        ]
+      ],
+      "confidence": 0.9789220690727234,
+      "text": "Electrical Supplies"
+    },
+    {
+      "bbox": [
+        [
+          2307,
+          1743
+        ],
+        [
+          2367,
+          1743
+        ],
+        [
+          2367,
+          2062
+        ],
+        [
+          2307,
+          2062
+        ]
+      ],
+      "confidence": 0.9768425822257996,
+      "text": "Solar Energy"
+    },
+    {
+      "bbox": [
+        [
+          1572,
+          1744
+        ],
+        [
+          1645,
+          1743
+        ],
+        [
+          1654,
+          2297
+        ],
+        [
+          1581,
+          2298
+        ]
+      ],
+      "confidence": 0.977123498916626,
+      "text": "Siemens MV3150kVA"
+    },
+    {
+      "bbox": [
+        [
+          1365,
+          1745
+        ],
+        [
+          1439,
+          1742
+        ],
+        [
+          1453,
+          2170
+        ],
+        [
+          1379,
+          2172
+        ]
+      ],
+      "confidence": 0.9767464995384216,
+      "text": "Switchgears (02"
+    },
+    {
+      "bbox": [
+        [
+          1920,
+          1747
+        ],
+        [
+          1967,
+          1747
+        ],
+        [
+          1967,
+          1898
+        ],
+        [
+          1920,
+          1898
+        ]
+      ],
+      "confidence": 0.9946182370185852,
+      "text": "Feet)"
+    },
+    {
+      "bbox": [
+        [
+          688,
+          1751
+        ],
+        [
+          761,
+          1753
+        ],
+        [
+          751,
+          2088
+        ],
+        [
+          678,
+          2086
+        ]
+      ],
+      "confidence": 0.9604188799858093,
+      "text": "Solar Energy"
+    },
+    {
+      "bbox": [
+        [
+          777,
+          1751
+        ],
+        [
+          838,
+          1751
+        ],
+        [
+          838,
+          1945
+        ],
+        [
+          777,
+          1945
+        ]
+      ],
+      "confidence": 0.9806237816810608,
+      "text": "Units)"
+    },
+    {
+      "bbox": [
+        [
+          846,
+          1751
+        ],
+        [
+          906,
+          1751
+        ],
+        [
+          906,
+          2184
+        ],
+        [
+          846,
+          2184
+        ]
+      ],
+      "confidence": 0.9757636785507202,
+      "text": "Accessories (416"
+    },
+    {
+      "bbox": [
+        [
+          2208,
+          1751
+        ],
+        [
+          2272,
+          1751
+        ],
+        [
+          2272,
+          1953
+        ],
+        [
+          2208,
+          1953
+        ]
+      ],
+      "confidence": 0.9903652667999268,
+      "text": "Unused"
+    },
+    {
+      "bbox": [
+        [
+          902,
+          1752
+        ],
+        [
+          966,
+          1751
+        ],
+        [
+          976,
+          2128
+        ],
+        [
+          911,
+          2130
+        ]
+      ],
+      "confidence": 0.9752978086471558,
+      "text": "Inverters and"
+    },
+    {
+      "bbox": [
+        [
+          971,
+          1752
+        ],
+        [
+          1044,
+          1751
+        ],
+        [
+          1048,
+          2238
+        ],
+        [
+          975,
+          2239
+        ]
+      ],
+      "confidence": 0.9729557037353516,
+      "text": "Sungrow SH5 Solar"
+    },
+    {
+      "bbox": [
+        [
+          1319,
+          1756
+        ],
+        [
+          1366,
+          1756
+        ],
+        [
+          1366,
+          1919
+        ],
+        [
+          1319,
+          1919
+        ]
+      ],
+      "confidence": 0.9959573149681091,
+      "text": "Units)"
+    },
+    {
+      "bbox": [
+        [
+          1456,
+          1756
+        ],
+        [
+          1503,
+          1756
+        ],
+        [
+          1503,
+          2041
+        ],
+        [
+          1456,
+          2041
+        ]
+      ],
+      "confidence": 0.9945407509803772,
+      "text": "Schneider"
+    },
+    {
+      "bbox": [
+        [
+          1516,
+          1756
+        ],
+        [
+          1576,
+          1756
+        ],
+        [
+          1576,
+          2230
+        ],
+        [
+          1516,
+          2230
+        ]
+      ],
+      "confidence": 0.9834388494491577,
+      "text": "Transformers with"
+    },
+    {
+      "bbox": [
+        [
+          232,
+          1760
+        ],
+        [
+          292,
+          1760
+        ],
+        [
+          292,
+          2108
+        ],
+        [
+          232,
+          2108
+        ]
+      ],
+      "confidence": 0.9249852895736694,
+      "text": "(7,000 Units)"
+    },
+    {
+      "bbox": [
+        [
+          301,
+          1760
+        ],
+        [
+          357,
+          1760
+        ],
+        [
+          357,
+          2226
+        ],
+        [
+          301,
+          2226
+        ]
+      ],
+      "confidence": 0.9605087041854858,
+      "text": "Long Input Cable"
+    },
+    {
+      "bbox": [
+        [
+          369,
+          1760
+        ],
+        [
+          425,
+          1760
+        ],
+        [
+          425,
+          2314
+        ],
+        [
+          369,
+          2314
+        ]
+      ],
+      "confidence": 0.9685355424880981,
+      "text": "Optimizer (2 Modules)"
+    },
+    {
+      "bbox": [
+        [
+          438,
+          1760
+        ],
+        [
+          498,
+          1760
+        ],
+        [
+          498,
+          2142
+        ],
+        [
+          438,
+          2142
+        ]
+      ],
+      "confidence": 0.9363721013069153,
+      "text": "Huawei 1100w"
+    },
+    {
+      "bbox": [
+        [
+          1233,
+          1760
+        ],
+        [
+          1293,
+          1760
+        ],
+        [
+          1293,
+          2096
+        ],
+        [
+          1233,
+          2096
+        ]
+      ],
+      "confidence": 0.996919572353363,
+      "text": "Transformers"
+    },
+    {
+      "bbox": [
+        [
+          1722,
+          1760
+        ],
+        [
+          1800,
+          1760
+        ],
+        [
+          1800,
+          1961
+        ],
+        [
+          1722,
+          1961
+        ]
+      ],
+      "confidence": 0.9887924194335938,
+      "text": "Unused"
+    },
+    {
+      "bbox": [
+        [
+          588,
+          1764
+        ],
+        [
+          657,
+          1764
+        ],
+        [
+          657,
+          1978
+        ],
+        [
+          588,
+          1978
+        ]
+      ],
+      "confidence": 0.9819226264953613,
+      "text": "Unused"
+    },
+    {
+      "bbox": [
+        [
+          1143,
+          1772
+        ],
+        [
+          1190,
+          1772
+        ],
+        [
+          1190,
+          1970
+        ],
+        [
+          1143,
+          1970
+        ]
+      ],
+      "confidence": 0.9884386658668518,
+      "text": "Unused"
+    },
+    {
+      "bbox": [
+        [
+          301,
+          2494
+        ],
+        [
+          374,
+          2496
+        ],
+        [
+          365,
+          2836
+        ],
+        [
+          292,
+          2834
+        ]
+      ],
+      "confidence": 0.983422577381134,
+      "text": "Solar Energy"
+    },
+    {
+      "bbox": [
+        [
+          465,
+          2494
+        ],
+        [
+          525,
+          2496
+        ],
+        [
+          506,
+          3037
+        ],
+        [
+          446,
+          3035
+        ]
+      ],
+      "confidence": 0.9575110077857971,
+      "text": "Hybrid Inverters (210"
+    },
+    {
+      "bbox": [
+        [
+          1006,
+          2494
+        ],
+        [
+          1079,
+          2496
+        ],
+        [
+          1060,
+          3075
+        ],
+        [
+          987,
+          3073
+        ]
+      ],
+      "confidence": 0.9279423952102661,
+      "text": "STP 8.0 Smart Energy"
+    },
+    {
+      "bbox": [
+        [
+          1066,
+          2494
+        ],
+        [
+          1139,
+          2496
+        ],
+        [
+          1129,
+          3054
+        ],
+        [
+          1056,
+          3053
+        ]
+      ],
+      "confidence": 0.9903459548950195,
+      "text": "SMA Sunny Tripower"
+    },
+    {
+      "bbox": [
+        [
+          1405,
+          2495
+        ],
+        [
+          1478,
+          2495
+        ],
+        [
+          1478,
+          2969
+        ],
+        [
+          1405,
+          2969
+        ]
+      ],
+      "confidence": 0.9670983552932739,
+      "text": "Panels (146 Units)"
+    },
+    {
+      "bbox": [
+        [
+          1538,
+          2495
+        ],
+        [
+          1611,
+          2495
+        ],
+        [
+          1611,
+          3016
+        ],
+        [
+          1538,
+          3016
+        ]
+      ],
+      "confidence": 0.997298538684845,
+      "text": "Solar/Jinko/DMEGC"
+    },
+    {
+      "bbox": [
+        [
+          2019,
+          2495
+        ],
+        [
+          2096,
+          2495
+        ],
+        [
+          2092,
+          3058
+        ],
+        [
+          2014,
+          3057
+        ]
+      ],
+      "confidence": 0.9797675013542175,
+      "text": "4.4M Battery Inverter"
+    },
+    {
+      "bbox": [
+        [
+          2440,
+          2495
+        ],
+        [
+          2500,
+          2495
+        ],
+        [
+          2500,
+          2961
+        ],
+        [
+          2440,
+          2961
+        ]
+      ],
+      "confidence": 0.9626286029815674,
+      "text": "Inverter (31 Units)"
+    },
+    {
+      "bbox": [
+        [
+          782,
+          2498
+        ],
+        [
+          842,
+          2500
+        ],
+        [
+          833,
+          2836
+        ],
+        [
+          773,
+          2834
+        ]
+      ],
+      "confidence": 0.979688823223114,
+      "text": "Solar Energy"
+    },
+    {
+      "bbox": [
+        [
+          1323,
+          2498
+        ],
+        [
+          1388,
+          2500
+        ],
+        [
+          1378,
+          2844
+        ],
+        [
+          1314,
+          2842
+        ]
+      ],
+      "confidence": 0.9838046431541443,
+      "text": "Solar Energy"
+    },
+    {
+      "bbox": [
+        [
+          2350,
+          2498
+        ],
+        [
+          2423,
+          2500
+        ],
+        [
+          2413,
+          2848
+        ],
+        [
+          2340,
+          2846
+        ]
+      ],
+      "confidence": 0.9773433804512024,
+      "text": "Solar Energy"
+    },
+    {
+      "bbox": [
+        [
+          219,
+          2499
+        ],
+        [
+          280,
+          2500
+        ],
+        [
+          275,
+          2743
+        ],
+        [
+          214,
+          2742
+        ]
+      ],
+      "confidence": 0.5642099976539612,
+      "text": "Marced"
+    },
+    {
+      "bbox": [
+        [
+          391,
+          2499
+        ],
+        [
+          451,
+          2499
+        ],
+        [
+          451,
+          2701
+        ],
+        [
+          391,
+          2701
+        ]
+      ],
+      "confidence": 0.958685576915741,
+      "text": "Units)"
+    },
+    {
+      "bbox": [
+        [
+          528,
+          2499
+        ],
+        [
+          588,
+          2499
+        ],
+        [
+          588,
+          3037
+        ],
+        [
+          528,
+          3037
+        ]
+      ],
+      "confidence": 0.974102258682251,
+      "text": "Hypontech HES 5kW"
+    },
+    {
+      "bbox": [
+        [
+          1473,
+          2499
+        ],
+        [
+          1546,
+          2499
+        ],
+        [
+          1546,
+          2953
+        ],
+        [
+          1473,
+          2953
+        ]
+      ],
+      "confidence": 0.93883216381073,
+      "text": "375-590W Solar"
+    },
+    {
+      "bbox": [
+        [
+          1864,
+          2499
+        ],
+        [
+          1937,
+          2499
+        ],
+        [
+          1937,
+          2843
+        ],
+        [
+          1864,
+          2843
+        ]
+      ],
+      "confidence": 0.9822204113006592,
+      "text": "Solar Energy"
+    },
+    {
+      "bbox": [
+        [
+          1950,
+          2499
+        ],
+        [
+          2023,
+          2499
+        ],
+        [
+          2023,
+          2793
+        ],
+        [
+          1950,
+          2793
+        ]
+      ],
+      "confidence": 0.9256409406661987,
+      "text": "(29 Units)"
+    },
+    {
+      "bbox": [
+        [
+          2513,
+          2499
+        ],
+        [
+          2573,
+          2499
+        ],
+        [
+          2573,
+          2986
+        ],
+        [
+          2513,
+          2986
+        ]
+      ],
+      "confidence": 0.9927135705947876,
+      "text": "17KTL-M53-Phase"
+    },
+    {
+      "bbox": [
+        [
+          2582,
+          2499
+        ],
+        [
+          2637,
+          2499
+        ],
+        [
+          2637,
+          2995
+        ],
+        [
+          2582,
+          2995
+        ]
+      ],
+      "confidence": 0.6938564777374268,
+      "text": "HuaweI SuINZuuu-"
+    },
+    {
+      "bbox": [
+        [
+          937,
+          2503
+        ],
+        [
+          997,
+          2504
+        ],
+        [
+          988,
+          3012
+        ],
+        [
+          927,
+          3011
+        ]
+      ],
+      "confidence": 0.916101336479187,
+      "text": "(SE) Solar Inverters"
+    },
+    {
+      "bbox": [
+        [
+          2096,
+          2503
+        ],
+        [
+          2156,
+          2503
+        ],
+        [
+          2156,
+          2982
+        ],
+        [
+          2096,
+          2982
+        ]
+      ],
+      "confidence": 0.9622250199317932,
+      "text": "SMA Sunny Island"
+    },
+    {
+      "bbox": [
+        [
+          872,
+          2507
+        ],
+        [
+          919,
+          2507
+        ],
+        [
+          919,
+          2755
+        ],
+        [
+          872,
+          2755
+        ]
+      ],
+      "confidence": 0.9287096858024597,
+      "text": "(41Units)"
+    },
+    {
+      "bbox": [
+        [
+          1619,
+          2507
+        ],
+        [
+          1671,
+          2507
+        ],
+        [
+          1671,
+          2604
+        ],
+        [
+          1619,
+          2604
+        ]
+      ],
+      "confidence": 0.9961651563644409,
+      "text": "JA"
+    },
+    {
+      "bbox": [
+        [
+          684,
+          2511
+        ],
+        [
+          748,
+          2514
+        ],
+        [
+          738,
+          2714
+        ],
+        [
+          673,
+          2711
+        ]
+      ],
+      "confidence": 0.9916219115257263,
+      "text": "Unused"
+    },
+    {
+      "bbox": [
+        [
+          1224,
+          2520
+        ],
+        [
+          1289,
+          2520
+        ],
+        [
+          1289,
+          2717
+        ],
+        [
+          1224,
+          2717
+        ]
+      ],
+      "confidence": 0.995244026184082,
+      "text": "Unused"
+    },
+    {
+      "bbox": [
+        [
+          1770,
+          2520
+        ],
+        [
+          1830,
+          2520
+        ],
+        [
+          1830,
+          2726
+        ],
+        [
+          1770,
+          2726
+        ]
+      ],
+      "confidence": 0.9906373620033264,
+      "text": "Unused"
+    },
+    {
+      "bbox": [
+        [
+          2251,
+          2524
+        ],
+        [
+          2311,
+          2524
+        ],
+        [
+          2311,
+          2726
+        ],
+        [
+          2251,
+          2726
+        ]
+      ],
+      "confidence": 0.9931288361549377,
+      "text": "Unused"
+    },
+    {
+      "bbox": [
+        [
+          465,
+          3258
+        ],
+        [
+          538,
+          3261
+        ],
+        [
+          519,
+          3726
+        ],
+        [
+          446,
+          3724
+        ]
+      ],
+      "confidence": 0.9666237235069275,
+      "text": "MV90-350kcmil"
+    },
+    {
+      "bbox": [
+        [
+          396,
+          3262
+        ],
+        [
+          469,
+          3266
+        ],
+        [
+          446,
+          3714
+        ],
+        [
+          372,
+          3710
+        ]
+      ],
+      "confidence": 0.9839556813240051,
+      "text": "1/3CN Aluminum"
+    },
+    {
+      "bbox": [
+        [
+          250,
+          3263
+        ],
+        [
+          323,
+          3265
+        ],
+        [
+          313,
+          3621
+        ],
+        [
+          240,
+          3619
+        ]
+      ],
+      "confidence": 0.9348871111869812,
+      "text": "(7,500 Feet)"
+    },
+    {
+      "bbox": [
+        [
+          327,
+          3267
+        ],
+        [
+          387,
+          3269
+        ],
+        [
+          373,
+          3713
+        ],
+        [
+          313,
+          3712
+        ]
+      ],
+      "confidence": 0.9909801483154297,
+      "text": "Conductor Cable"
+    },
+    {
+      "bbox": [
+        [
+          765,
+          3267
+        ],
+        [
+          838,
+          3270
+        ],
+        [
+          824,
+          3617
+        ],
+        [
+          751,
+          3614
+        ]
+      ],
+      "confidence": 0.9866244196891785,
+      "text": "Solar Energy"
+    },
+    {
+      "bbox": [
+        [
+          860,
+          3267
+        ],
+        [
+          920,
+          3270
+        ],
+        [
+          905,
+          3546
+        ],
+        [
+          845,
+          3543
+        ]
+      ],
+      "confidence": 0.9976926445960999,
+      "text": "Damaged"
+    },
+    {
+      "bbox": [
+        [
+          924,
+          3267
+        ],
+        [
+          997,
+          3269
+        ],
+        [
+          979,
+          3835
+        ],
+        [
+          906,
+          3833
+        ]
+      ],
+      "confidence": 0.9606415629386902,
+      "text": "(720 units)-Partially"
+    },
+    {
+      "bbox": [
+        [
+          993,
+          3267
+        ],
+        [
+          1066,
+          3269
+        ],
+        [
+          1052,
+          3823
+        ],
+        [
+          979,
+          3821
+        ]
+      ],
+      "confidence": 0.9791211485862732,
+      "text": "615/LB Solar Panels"
+    },
+    {
+      "bbox": [
+        [
+          1061,
+          3267
+        ],
+        [
+          1134,
+          3268
+        ],
+        [
+          1125,
+          3843
+        ],
+        [
+          1052,
+          3842
+        ]
+      ],
+      "confidence": 0.9685488939285278,
+      "text": "JA Solar JAM66D45-"
+    },
+    {
+      "bbox": [
+        [
+          1401,
+          3271
+        ],
+        [
+          1474,
+          3273
+        ],
+        [
+          1464,
+          3713
+        ],
+        [
+          1391,
+          3712
+        ]
+      ],
+      "confidence": 0.9908751249313354,
+      "text": "Units)-Unused"
+    },
+    {
+      "bbox": [
+        [
+          1315,
+          3275
+        ],
+        [
+          1388,
+          3277
+        ],
+        [
+          1378,
+          3634
+        ],
+        [
+          1305,
+          3632
+        ]
+      ],
+      "confidence": 0.9833346009254456,
+      "text": "Solar Energy"
+    },
+    {
+      "bbox": [
+        [
+          1469,
+          3276
+        ],
+        [
+          1542,
+          3276
+        ],
+        [
+          1538,
+          3789
+        ],
+        [
+          1465,
+          3788
+        ]
+      ],
+      "confidence": 0.9707130193710327,
+      "text": "Solar Inverters (141"
+    },
+    {
+      "bbox": [
+        [
+          2002,
+          3284
+        ],
+        [
+          2075,
+          3285
+        ],
+        [
+          2066,
+          3864
+        ],
+        [
+          1993,
+          3863
+        ]
+      ],
+      "confidence": 0.9783230423927307,
+      "text": " Solar String Inverters"
+    },
+    {
+      "bbox": [
+        [
+          1852,
+          3288
+        ],
+        [
+          1912,
+          3290
+        ],
+        [
+          1902,
+          3642
+        ],
+        [
+          1842,
+          3640
+        ]
+      ],
+      "confidence": 0.9704927802085876,
+      "text": "Solar Energy"
+    },
+    {
+      "bbox": [
+        [
+          1546,
+          3289
+        ],
+        [
+          1606,
+          3289
+        ],
+        [
+          1606,
+          3755
+        ],
+        [
+          1546,
+          3755
+        ]
+      ],
+      "confidence": 0.9644920229911804,
+      "text": "Schneider 50kW"
+    },
+    {
+      "bbox": [
+        [
+          1933,
+          3289
+        ],
+        [
+          2006,
+          3289
+        ],
+        [
+          2006,
+          3574
+        ],
+        [
+          1933,
+          3574
+        ]
+      ],
+      "confidence": 0.9997435808181763,
+      "text": "(92 Units)"
+    },
+    {
+      "bbox": [
+        [
+          670,
+          3293
+        ],
+        [
+          726,
+          3293
+        ],
+        [
+          726,
+          3671
+        ],
+        [
+          670,
+          3671
+        ]
+      ],
+      "confidence": 0.971985936164856,
+      "text": "Insurance Claim"
+    },
+    {
+      "bbox": [
+        [
+          1220,
+          3293
+        ],
+        [
+          1280,
+          3293
+        ],
+        [
+          1280,
+          3503
+        ],
+        [
+          1220,
+          3503
+        ]
+      ],
+      "confidence": 0.9923222064971924,
+      "text": "Unused"
+    },
+    {
+      "bbox": [
+        [
+          2337,
+          3296
+        ],
+        [
+          2410,
+          3298
+        ],
+        [
+          2401,
+          3650
+        ],
+        [
+          2327,
+          3649
+        ]
+      ],
+      "confidence": 0.9897857308387756,
+      "text": "Solar Energy"
+    },
+    {
+      "bbox": [
+        [
+          2079,
+          3297
+        ],
+        [
+          2139,
+          3297
+        ],
+        [
+          2139,
+          3818
+        ],
+        [
+          2079,
+          3818
+        ]
+      ],
+      "confidence": 0.9704228043556213,
+      "text": "KehuaTech 100kW"
+    },
+    {
+      "bbox": [
+        [
+          2431,
+          3297
+        ],
+        [
+          2491,
+          3297
+        ],
+        [
+          2491,
+          3490
+        ],
+        [
+          2431,
+          3490
+        ]
+      ],
+      "confidence": 0.9266234040260315,
+      "text": "Units)"
+    },
+    {
+      "bbox": [
+        [
+          2491,
+          3301
+        ],
+        [
+          2564,
+          3301
+        ],
+        [
+          2564,
+          3864
+        ],
+        [
+          2491,
+          3864
+        ]
+      ],
+      "confidence": 0.9551634788513184,
+      "text": "Hybrid Inverters (210"
+    },
+    {
+      "bbox": [
+        [
+          2573,
+          3301
+        ],
+        [
+          2633,
+          3301
+        ],
+        [
+          2633,
+          3860
+        ],
+        [
+          2573,
+          3860
+        ]
+      ],
+      "confidence": 0.9641340970993042,
+      "text": "Hypontech HES 5kW"
+    },
+    {
+      "bbox": [
+        [
+          2238,
+          3314
+        ],
+        [
+          2285,
+          3314
+        ],
+        [
+          2285,
+          3515
+        ],
+        [
+          2238,
+          3515
+        ]
+      ],
+      "confidence": 0.9969911575317383,
+      "text": "Unused"
+    },
+    {
+      "bbox": [
+        [
+          1705,
+          3318
+        ],
+        [
+          1765,
+          3318
+        ],
+        [
+          1765,
+          3574
+        ],
+        [
+          1705,
+          3574
+        ]
+      ],
+      "confidence": 0.9987426400184631,
+      "text": "Warrantee"
+    },
+    {
+      "bbox": [
+        [
+          1757,
+          3318
+        ],
+        [
+          1804,
+          3318
+        ],
+        [
+          1804,
+          3612
+        ],
+        [
+          1757,
+          3612
+        ]
+      ],
+      "confidence": 0.9792999029159546,
+      "text": "Unused with"
+    }
+  ]
+}
+
+✅ EXTRACTION COMPLETED SUCCESSFULLY
+════════════════════════════════════════════════════════════════════════════════
+
+📊 ROTATION LOG ANALYSIS:
+────────────────────────────────────────────────────────────────────────────────
+⚠️ No rotation-related logs found
+────────────────────────────────────────────────────────────────────────────────
+
+📸 Screenshot saved: test-heic-auto-rotation-selenium.png
+
+🔚 Closing browser...

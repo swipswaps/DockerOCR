@@ -1,0 +1,277 @@
+
+============================================================
+🔍 PADDLEOCR TEST WITH LIVE LOGS
+============================================================
+[DOCKER] download https://paddleocr.bj.bcebos.com/PP-OCRv3/english/en_PP-OCRv3_det_infer.tar to /root/.paddleocr/whl/det/en/en_PP-OCRv3_det_infer/en_PP-OCRv3_det_infer.tar
+[DOCKER] 
+[DOCKER]   0%|          | 0.00/4.00M [00:00<?, ?iB/s]
+[DOCKER]   0%|          | 3.07k/4.00M [00:00<05:42, 11.7kiB/s]
+[DOCKER]   1%|          | 35.8k/4.00M [00:00<00:51, 76.9kiB/s]
+[DOCKER]   2%|▏         | 85.0k/4.00M [00:00<00:29, 133kiB/s]
+[DOCKER]   5%|▍         | 200k/4.00M [00:01<00:15, 253kiB/s]
+[DOCKER]   9%|▊         | 347k/4.00M [00:01<00:10, 360kiB/s]
+[DOCKER]  12%|█▏        | 495k/4.00M [00:01<00:09, 389kiB/s]
+[DOCKER]  21%|██        | 822k/4.00M [00:01<00:04, 703kiB/s]
+[DOCKER]  25%|██▌       | 1.02M/4.00M [00:02<00:04, 630kiB/s]
+[DOCKER]  28%|██▊       | 1.13M/4.00M [00:02<00:04, 641kiB/s]
+[DOCKER]  39%|███▉      | 1.56M/4.00M [00:02<00:02, 1.17MiB/s]
+[DOCKER]  43%|████▎     | 1.74M/4.00M [00:03<00:03, 648kiB/s]
+[DOCKER]  47%|████▋     | 1.87M/4.00M [00:03<00:03, 654kiB/s]
+[DOCKER]  52%|█████▏    | 2.08M/4.00M [00:03<00:02, 803kiB/s]
+[DOCKER]  55%|█████▌    | 2.21M/4.00M [00:03<00:02, 748kiB/s]
+[DOCKER]  58%|█████▊    | 2.31M/4.00M [00:03<00:02, 767kiB/s]
+[DOCKER]  60%|██████    | 2.41M/4.00M [00:03<00:02, 740kiB/s]
+[DOCKER]  63%|██████▎   | 2.51M/4.00M [00:04<00:01, 764kiB/s]
+[DOCKER]  65%|██████▍   | 2.60M/4.00M [00:04<00:01, 713kiB/s]
+[DOCKER]  68%|██████▊   | 2.72M/4.00M [00:04<00:01, 782kiB/s]
+[DOCKER]  70%|███████   | 2.81M/4.00M [00:04<00:01, 725kiB/s]
+[DOCKER]  73%|███████▎  | 2.92M/4.00M [00:04<00:01, 810kiB/s]
+[DOCKER]  75%|███████▌  | 3.01M/4.00M [00:04<00:01, 714kiB/s]
+[DOCKER]  79%|███████▊  | 3.15M/4.00M [00:04<00:01, 820kiB/s]
+[DOCKER]  81%|████████  | 3.23M/4.00M [00:05<00:01, 752kiB/s]
+[DOCKER]  84%|████████▍ | 3.36M/4.00M [00:05<00:00, 834kiB/s]
+[DOCKER]  86%|████████▌ | 3.45M/4.00M [00:05<00:00, 752kiB/s]
+[DOCKER]  89%|████████▉ | 3.57M/4.00M [00:05<00:00, 866kiB/s]
+[DOCKER]  92%|█████████▏| 3.67M/4.00M [00:05<00:00, 774kiB/s]
+[DOCKER]  95%|█████████▍| 3.80M/4.00M [00:05<00:00, 866kiB/s]
+[DOCKER]  97%|█████████▋| 3.89M/4.00M [00:05<00:00, 778kiB/s]
+[DOCKER] 100%|██████████| 4.00M/4.00M [00:05<00:00, 677kiB/s]
+[DOCKER] download https://paddleocr.bj.bcebos.com/PP-OCRv4/english/en_PP-OCRv4_rec_infer.tar to /root/.paddleocr/whl/rec/en/en_PP-OCRv4_rec_infer/en_PP-OCRv4_rec_infer.tar
+[DOCKER] 
+[DOCKER]   0%|          | 0.00/10.2M [00:00<?, ?iB/s]
+[DOCKER]   0%|          | 3.07k/10.2M [00:00<14:37, 11.7kiB/s]
+[DOCKER]   0%|          | 35.8k/10.2M [00:00<02:11, 77.9kiB/s]
+[DOCKER]   1%|          | 85.0k/10.2M [00:00<01:15, 135kiB/s]
+[DOCKER]   2%|▏         | 200k/10.2M [00:01<00:39, 257kiB/s]
+[DOCKER]   3%|▎         | 347k/10.2M [00:01<00:27, 366kiB/s]
+[DOCKER]   5%|▍         | 495k/10.2M [00:01<00:25, 389kiB/s]
+[DOCKER]   8%|▊         | 822k/10.2M [00:01<00:13, 708kiB/s]
+[DOCKER]   9%|▉         | 969k/10.2M [00:01<00:11, 809kiB/s]
+[DOCKER]  10%|█         | 1.07M/10.2M [00:02<00:14, 647kiB/s]
+[DOCKER]  11%|█         | 1.15M/10.2M [00:02<00:14, 627kiB/s]
+[DOCKER]  15%|█▍        | 1.53M/10.2M [00:02<00:07, 1.19MiB/s]
+[DOCKER]  17%|█▋        | 1.69M/10.2M [00:02<00:08, 1.04MiB/s]
+[DOCKER]  19%|█▉        | 1.95M/10.2M [00:02<00:07, 1.08MiB/s]
+[DOCKER]  20%|██        | 2.08M/10.2M [00:03<00:07, 1.11MiB/s]
+[DOCKER]  22%|██▏       | 2.23M/10.2M [00:03<00:07, 1.06MiB/s]
+[DOCKER]  23%|██▎       | 2.38M/10.2M [00:03<00:06, 1.12MiB/s]
+[DOCKER]  25%|██▍       | 2.53M/10.2M [00:03<00:07, 1.06MiB/s]
+[DOCKER]  26%|██▌       | 2.67M/10.2M [00:03<00:06, 1.13MiB/s]
+[DOCKER]  28%|██▊       | 2.84M/10.2M [00:03<00:06, 1.07MiB/s]
+[DOCKER]  29%|██▉       | 2.98M/10.2M [00:03<00:06, 1.16MiB/s]
+[DOCKER]  31%|███       | 3.13M/10.2M [00:03<00:06, 1.09MiB/s]
+[DOCKER]  32%|███▏      | 3.25M/10.2M [00:04<00:13, 525kiB/s]
+[DOCKER]  33%|███▎      | 3.36M/10.2M [00:04<00:11, 593kiB/s]
+[DOCKER]  34%|███▎      | 3.45M/10.2M [00:04<00:11, 574kiB/s]
+[DOCKER]  36%|███▌      | 3.64M/10.2M [00:04<00:08, 768kiB/s]
+[DOCKER]  37%|███▋      | 3.74M/10.2M [00:05<00:09, 691kiB/s]
+[DOCKER]  37%|███▋      | 3.83M/10.2M [00:05<00:09, 686kiB/s]
+[DOCKER]  38%|███▊      | 3.91M/10.2M [00:05<00:09, 659kiB/s]
+[DOCKER]  39%|███▉      | 3.98M/10.2M [00:05<00:09, 649kiB/s]
+[DOCKER]  40%|███▉      | 4.05M/10.2M [00:05<00:10, 608kiB/s]
+[DOCKER]  40%|████      | 4.15M/10.2M [00:05<00:08, 679kiB/s]
+[DOCKER]  41%|████      | 4.22M/10.2M [00:05<00:09, 617kiB/s]
+[DOCKER]  42%|████▏     | 4.31M/10.2M [00:06<00:09, 645kiB/s]
+[DOCKER]  43%|████▎     | 4.41M/10.2M [00:06<00:08, 693kiB/s]
+[DOCKER]  44%|████▍     | 4.51M/10.2M [00:06<00:07, 723kiB/s]
+[DOCKER]  45%|████▍     | 4.61M/10.2M [00:06<00:07, 761kiB/s]
+[DOCKER]  46%|████▌     | 4.68M/10.2M [00:06<00:07, 755kiB/s]
+[DOCKER]  47%|████▋     | 4.78M/10.2M [00:06<00:06, 818kiB/s]
+[DOCKER]  48%|████▊     | 4.87M/10.2M [00:06<00:07, 754kiB/s]
+[DOCKER]  48%|████▊     | 4.97M/10.2M [00:06<00:06, 753kiB/s]
+[DOCKER]  50%|████▉     | 5.08M/10.2M [00:07<00:06, 780kiB/s]
+[DOCKER]  51%|█████     | 5.20M/10.2M [00:07<00:06, 811kiB/s]
+[DOCKER]  52%|█████▏    | 5.31M/10.2M [00:07<00:05, 848kiB/s]
+[DOCKER]  53%|█████▎    | 5.41M/10.2M [00:07<00:05, 866kiB/s]
+[DOCKER]  54%|█████▍    | 5.52M/10.2M [00:07<00:05, 934kiB/s]
+[DOCKER]  55%|█████▍    | 5.62M/10.2M [00:07<00:05, 911kiB/s]
+[DOCKER]  56%|█████▌    | 5.72M/10.2M [00:07<00:04, 931kiB/s]
+[DOCKER]  57%|█████▋    | 5.81M/10.2M [00:07<00:05, 871kiB/s]
+[DOCKER]  58%|█████▊    | 5.92M/10.2M [00:07<00:04, 897kiB/s]
+[DOCKER]  59%|█████▉    | 6.03M/10.2M [00:08<00:04, 906kiB/s]
+[DOCKER]  60%|█████▉    | 6.12M/10.2M [00:08<00:05, 697kiB/s]
+[DOCKER]  61%|██████    | 6.20M/10.2M [00:08<00:09, 422kiB/s]
+[DOCKER]  63%|██████▎   | 6.42M/10.2M [00:08<00:05, 693kiB/s]
+[DOCKER]  64%|██████▎   | 6.52M/10.2M [00:08<00:05, 688kiB/s]
+[DOCKER]  65%|██████▍   | 6.61M/10.2M [00:09<00:05, 694kiB/s]
+[DOCKER]  65%|██████▌   | 6.69M/10.2M [00:09<00:05, 665kiB/s]
+[DOCKER]  66%|██████▋   | 6.79M/10.2M [00:09<00:04, 713kiB/s]
+[DOCKER]  67%|██████▋   | 6.87M/10.2M [00:09<00:04, 686kiB/s]
+[DOCKER]  68%|██████▊   | 6.97M/10.2M [00:09<00:04, 735kiB/s]
+[DOCKER]  69%|██████▉   | 7.04M/10.2M [00:09<00:04, 717kiB/s]
+[DOCKER]  70%|██████▉   | 7.15M/10.2M [00:09<00:03, 785kiB/s]
+[DOCKER]  71%|███████   | 7.23M/10.2M [00:09<00:04, 681kiB/s]
+[DOCKER]  72%|███████▏  | 7.34M/10.2M [00:10<00:03, 790kiB/s]
+[DOCKER]  73%|███████▎  | 7.43M/10.2M [00:10<00:04, 702kiB/s]
+[DOCKER]  73%|███████▎  | 7.52M/10.2M [00:10<00:03, 757kiB/s]
+[DOCKER]  74%|███████▍  | 7.60M/10.2M [00:10<00:03, 731kiB/s]
+[DOCKER]  75%|███████▌  | 7.69M/10.2M [00:10<00:03, 734kiB/s]
+[DOCKER]  76%|███████▌  | 7.80M/10.2M [00:10<00:03, 798kiB/s]
+[DOCKER]  77%|███████▋  | 7.88M/10.2M [00:10<00:03, 782kiB/s]
+[DOCKER]  78%|███████▊  | 8.00M/10.2M [00:10<00:02, 821kiB/s]
+[DOCKER]  79%|███████▉  | 8.08M/10.2M [00:11<00:02, 778kiB/s]
+[DOCKER]  80%|████████  | 8.20M/10.2M [00:11<00:02, 882kiB/s]
+[DOCKER]  81%|████████  | 8.29M/10.2M [00:11<00:02, 760kiB/s]
+[DOCKER]  82%|████████▏ | 8.39M/10.2M [00:11<00:02, 825kiB/s]
+[DOCKER]  83%|████████▎ | 8.48M/10.2M [00:11<00:02, 743kiB/s]
+[DOCKER]  84%|████████▍ | 8.59M/10.2M [00:11<00:02, 820kiB/s]
+[DOCKER]  85%|████████▍ | 8.67M/10.2M [00:11<00:01, 807kiB/s]
+[DOCKER]  86%|████████▌ | 8.77M/10.2M [00:11<00:01, 758kiB/s]
+[DOCKER]  87%|████████▋ | 8.88M/10.2M [00:11<00:01, 833kiB/s]
+[DOCKER]  88%|████████▊ | 8.97M/10.2M [00:12<00:01, 823kiB/s]
+[DOCKER]  88%|████████▊ | 9.06M/10.2M [00:12<00:01, 796kiB/s]
+[DOCKER]  89%|████████▉ | 9.14M/10.2M [00:12<00:01, 606kiB/s]
+[DOCKER]  90%|████████▉ | 9.21M/10.2M [00:12<00:02, 426kiB/s]
+[DOCKER]  92%|█████████▏| 9.42M/10.2M [00:12<00:01, 694kiB/s]
+[DOCKER]  93%|█████████▎| 9.51M/10.2M [00:13<00:01, 675kiB/s]
+[DOCKER]  94%|█████████▎| 9.59M/10.2M [00:13<00:01, 632kiB/s]
+[DOCKER]  94%|█████████▍| 9.67M/10.2M [00:13<00:00, 638kiB/s]
+[DOCKER]  95%|█████████▌| 9.74M/10.2M [00:13<00:00, 636kiB/s]
+[DOCKER]  96%|█████████▌| 9.80M/10.2M [00:13<00:00, 580kiB/s]
+[DOCKER]  97%|█████████▋| 9.90M/10.2M [00:13<00:00, 657kiB/s]
+[DOCKER]  97%|█████████▋| 9.97M/10.2M [00:13<00:00, 622kiB/s]
+[DOCKER]  98%|█████████▊| 10.1M/10.2M [00:13<00:00, 680kiB/s]
+[DOCKER]  99%|█████████▉| 10.1M/10.2M [00:14<00:00, 640kiB/s]
+[DOCKER] 100%|██████████| 10.2M/10.2M [00:14<00:00, 726kiB/s]
+[DOCKER] download https://paddleocr.bj.bcebos.com/dygraph_v2.0/ch/ch_ppocr_mobile_v2.0_cls_infer.tar to /root/.paddleocr/whl/cls/ch_ppocr_mobile_v2.0_cls_infer/ch_ppocr_mobile_v2.0_cls_infer.tar
+[DOCKER] 
+[DOCKER]   0%|          | 0.00/2.19M [00:00<?, ?iB/s]
+[DOCKER]   0%|          | 3.07k/2.19M [00:00<03:04, 11.9kiB/s]
+[DOCKER]   2%|▏         | 35.8k/2.19M [00:00<00:27, 79.3kiB/s]
+[DOCKER]   4%|▍         | 85.0k/2.19M [00:00<00:15, 133kiB/s]
+[DOCKER]   9%|▉         | 200k/2.19M [00:01<00:07, 257kiB/s]
+[DOCKER]  16%|█▌        | 347k/2.19M [00:01<00:05, 357kiB/s]
+[DOCKER]  18%|█▊        | 396k/2.19M [00:01<00:04, 365kiB/s]
+[DOCKER]  20%|█▉        | 433k/2.19M [00:01<00:06, 262kiB/s]
+[DOCKER]  23%|██▎       | 495k/2.19M [00:01<00:05, 310kiB/s]
+[DOCKER]  26%|██▌       | 560k/2.19M [00:01<00:04, 354kiB/s]
+[DOCKER]  33%|███▎      | 724k/2.19M [00:02<00:02, 593kiB/s]
+[DOCKER]  38%|███▊      | 822k/2.19M [00:02<00:02, 668kiB/s]
+[DOCKER]  45%|████▌     | 986k/2.19M [00:02<00:01, 890kiB/s]
+[DOCKER]  50%|█████     | 1.10M/2.19M [00:02<00:01, 929kiB/s]
+[DOCKER]  56%|█████▌    | 1.22M/2.19M [00:02<00:01, 972kiB/s]
+[DOCKER]  63%|██████▎   | 1.38M/2.19M [00:02<00:00, 1.11MiB/s]
+[DOCKER]  68%|██████▊   | 1.50M/2.19M [00:02<00:00, 1.10MiB/s]
+[DOCKER]  76%|███████▋  | 1.67M/2.19M [00:02<00:00, 1.27MiB/s]
+[DOCKER]  82%|████████▏ | 1.80M/2.19M [00:02<00:00, 1.20MiB/s]
+[DOCKER]  89%|████████▉ | 1.95M/2.19M [00:03<00:00, 1.28MiB/s]
+[DOCKER]  97%|█████████▋| 2.12M/2.19M [00:03<00:00, 1.35MiB/s]
+[DOCKER] 100%|██████████| 2.19M/2.19M [00:03<00:00, 674kiB/s]
+[DOCKER]  * Serving Flask app 'server'
+[DOCKER]  * Debug mode: off
+[DOCKER] [2025-11-23 20:53:44,449] [    INFO] _internal.py:97 - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+[DOCKER]  * Running on all addresses (0.0.0.0)
+[DOCKER]  * Running on http://127.0.0.1:5000
+[DOCKER]  * Running on http://172.20.0.2:5000
+[DOCKER] [2025-11-23 20:53:44,449] [    INFO] _internal.py:97 - [33mPress CTRL+C to quit[0m
+[DOCKER] [2025-11-23 20:57:04,540] [    INFO] _internal.py:97 - 172.20.0.1 - - [23/Nov/2025 20:57:04] "POST /ocr HTTP/1.1" 200 -
+[DOCKER] [2025-11-23 20:59:29,596] [   ERROR] server.py:244 - ═══════════════════════════════════════════════════
+[DOCKER] [2025-11-23 20:59:29,596] [   ERROR] server.py:245 - ❌ PADDLEOCR FAILED after 0.03s
+[DOCKER] [2025-11-23 20:59:29,596] [   ERROR] server.py:246 - ❌ Error type: RuntimeError
+[DOCKER] [2025-11-23 20:59:29,596] [   ERROR] server.py:247 - ❌ Error message: could not execute a primitive
+[DOCKER] [2025-11-23 20:59:29,597] [   ERROR] server.py:248 - ═══════════════════════════════════════════════════
+[DOCKER] [2025-11-23 20:59:29,597] [   ERROR] server.py:251 - 📋 FULL TRACEBACK:
+[DOCKER] [2025-11-23 20:59:29,598] [   ERROR] server.py:252 - Traceback (most recent call last):
+[DOCKER]   File "/app/server.py", line 232, in perform_ocr
+[DOCKER]     result = ocr.ocr(image_np, cls=True)
+[DOCKER]   File "/usr/local/lib/python3.9/site-packages/paddleocr/paddleocr.py", line 668, in ocr
+[DOCKER]     dt_boxes, rec_res, _ = self.__call__(img, cls)
+[DOCKER]   File "/usr/local/lib/python3.9/site-packages/paddleocr/tools/infer/predict_system.py", line 76, in __call__
+[DOCKER]     dt_boxes, elapse = self.text_detector(img)
+[DOCKER]   File "/usr/local/lib/python3.9/site-packages/paddleocr/tools/infer/predict_det.py", line 245, in __call__
+[DOCKER]     self.predictor.run()
+[DOCKER] RuntimeError: could not execute a primitive
+[DOCKER] 
+[DOCKER] [2025-11-23 20:59:29,598] [   ERROR] server.py:253 - ═══════════════════════════════════════════════════
+[DOCKER] [2025-11-23 20:59:29,598] [   ERROR] server.py:323 - ═══════════════════════════════════════════════════
+[DOCKER] [2025-11-23 20:59:29,598] [   ERROR] server.py:324 - ❌ EXCEPTION CAUGHT after 0.03s
+[DOCKER] [2025-11-23 20:59:29,598] [   ERROR] server.py:325 - ❌ Error type: RuntimeError
+[DOCKER] [2025-11-23 20:59:29,598] [   ERROR] server.py:326 - ❌ Error message: could not execute a primitive
+[DOCKER] [2025-11-23 20:59:29,598] [   ERROR] server.py:327 - ═══════════════════════════════════════════════════
+[DOCKER] [2025-11-23 20:59:29,598] [   ERROR] server.py:331 - 📋 FULL EXCEPTION TRACEBACK:
+[DOCKER] [2025-11-23 20:59:29,598] [   ERROR] server.py:332 - Traceback (most recent call last):
+[DOCKER]   File "/app/server.py", line 232, in perform_ocr
+[DOCKER]     result = ocr.ocr(image_np, cls=True)
+[DOCKER]   File "/usr/local/lib/python3.9/site-packages/paddleocr/paddleocr.py", line 668, in ocr
+[DOCKER]     dt_boxes, rec_res, _ = self.__call__(img, cls)
+[DOCKER]   File "/usr/local/lib/python3.9/site-packages/paddleocr/tools/infer/predict_system.py", line 76, in __call__
+[DOCKER]     dt_boxes, elapse = self.text_detector(img)
+[DOCKER]   File "/usr/local/lib/python3.9/site-packages/paddleocr/tools/infer/predict_det.py", line 245, in __call__
+[DOCKER]     self.predictor.run()
+[DOCKER] RuntimeError: could not execute a primitive
+[DOCKER] 
+[DOCKER] [2025-11-23 20:59:29,598] [   ERROR] server.py:333 - ═══════════════════════════════════════════════════
+[DOCKER] [2025-11-23 20:59:29,599] [    INFO] _internal.py:97 - 172.20.0.1 - - [23/Nov/2025 20:59:29] "[35m[1mPOST /ocr HTTP/1.1[0m" 500 -
+[DOCKER] 
+[DOCKER] 
+[DOCKER] --------------------------------------
+[DOCKER] C++ Traceback (most recent call last):
+[DOCKER] --------------------------------------
+[DOCKER] No stack trace in paddle, may be caused by external reasons.
+[DOCKER] 
+[DOCKER] ----------------------
+[DOCKER] Error Message Summary:
+[DOCKER] ----------------------
+[DOCKER] FatalError: `Termination signal` is detected by the operating system.
+[DOCKER]   [TimeInfo: *** Aborted at 1763931590 (unix time) try "date -d @1763931590" if you are using GNU date ***]
+[DOCKER]   [SignalInfo: *** SIGTERM (@0x0) received by PID 1 (TID 0x7f712e509b80) from PID 0 ***]
+[DOCKER] 
+[DOCKER]  * Serving Flask app 'server'
+[DOCKER]  * Debug mode: off
+[DOCKER] [2025-11-23 20:59:55,174] [    INFO] _internal.py:97 - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+[DOCKER]  * Running on all addresses (0.0.0.0)
+[DOCKER]  * Running on http://127.0.0.1:5000
+[DOCKER]  * Running on http://172.20.0.2:5000
+[DOCKER] [2025-11-23 20:59:55,174] [    INFO] _internal.py:97 - [33mPress CTRL+C to quit[0m
+
+📁 Loading image: ./sent-to-ocr-selenium.jpg
+✅ Loaded image: 1500x1125
+✅ Encoded to base64: 245288 characters
+
+🚀 Sending to PaddleOCR server...
+============================================================
+[DOCKER] [2025-11-23 21:04:02,941] [    INFO] _internal.py:97 - 172.20.0.1 - - [23/Nov/2025 21:04:02] "POST /ocr HTTP/1.1" 200 -
+============================================================
+
+✅ SUCCESS!
+📊 Extracted 132 text blocks
+📝 Total characters: 2013
+💾 Saved to ocr_result_with_logs.txt
+
+📋 First 30 lines:
+------------------------------------------------------------
+   1. Canadian Solar 370-395w Solar
+   2. Panels90284 Units/
+   3. 34.456MW)
+   4. Solar Energy
+   5. Unused
+   6. JA Solar 300-385W Solar Panels
+   7. 11,307 Units)
+   8. Solar Energy
+   9. Unused
+  10. Aluminum Frames & Temper
+  11. Glasses (Raw Materials)-for
+  12. Making PV Modules-Used
+  13. 20,854 Units)
+  14. Solar Energy
+  15. KACO Inverters, Smart Breakers
+  16. Combiner Box & Accessories
+  17. (296 Items)
+  18. Solar Energy
+  19. Unused
+  20. NEXTracker Torque Tubes Solar
+  21. Tracking System-Used (27
+  22. Units)
+  23. Solar Energy
+  24. Tigo Energy Solar El Battery
+  25. Storages (66 Units)
+  26. SolarEdge PV
+  27. First Solar 470w Solar
+  28. Optimizers(1,230
+  29. Panels-Used (5,000
+  30. Units)
+------------------------------------------------------------
+
+============================================================
+✅ TEST COMPLETE
+============================================================

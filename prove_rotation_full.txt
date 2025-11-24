@@ -1,0 +1,32 @@
+✅ Found HEIC file: /home/owner/Downloads/IMG_0372.heic
+📊 File size: 1.39 MB
+
+🌐 Opening http://localhost:3001...
+✅ App loaded
+
+📁 Uploading HEIC file...
+✅ File uploaded
+
+⏳ Waiting for HEIC conversion...
+
+📸 Capturing preview image...
+📐 Preview dimensions: 3024x4032
+⚠️ IMAGE APPEARS ROTATED: width (3024) < height (4032)
+   Aspect ratio: 0.75 (portrait orientation)
+
+🚀 Triggering OCR extraction to test auto-rotation...
+✅ Clicked Process tab
+✅ Selected PaddleOCR
+✅ Clicked Start Extraction
+⏳ Waiting 60 seconds for auto-rotation and OCR to complete...
+
+📋 Checking browser console logs AFTER OCR...
+  Total console entries: 8
+  [INFO] http://localhost:3001/services/ocrService.ts?t=1764013616475 152:10 "[DEBUG] autoRotateEnabled:" true
+  [INFO] http://localhost:3001/services/ocrService.ts?t=1764013616475 153:10 "[DEBUG] About to check auto-rotation condition"
+  [INFO] http://localhost:3001/services/ocrService.ts?t=1764013616475 155:12 "[DEBUG] Auto-rotation is ENABLED - starting detection"
+  ✅ Found rotation logs
+
+📸 Screenshot saved: prove-rotation-issue.png
+
+🔚 Closing browser...
