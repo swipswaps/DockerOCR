@@ -53,6 +53,10 @@ export async function detectRotationAngle(
     // The data.osd contains text like "Orientation: 0\nRotate: 90\n..."
     const osdText = data.osd || '';
 
+    // DEBUG: Log the raw OSD output to understand what Tesseract is detecting
+    onProgress?.(60, `DEBUG: OSD output: ${osdText.replace(/\n/g, ' | ')}`);
+    onProgress?.(70, `DEBUG: data.text=${data.text?.substring(0, 50) || 'none'}, confidence=${data.confidence}, rotateRadians=${data.rotateRadians}`);
+
     // Extract rotation angle from OSD output
     // Format: "Rotate: 90" means image needs 90° rotation to be upright
     const rotateMatch = osdText.match(/Rotate:\s*(\d+)/);

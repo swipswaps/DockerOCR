@@ -41,6 +41,7 @@ const App: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imagePreviewRef = useRef<ImagePreviewRef>(null);
+  const autoRotationDoneRef = useRef<string | null>(null); // Track which image has been auto-rotated
 
   // Custom hooks - MUST be called unconditionally
   const { filters, setFilters, resetFilters } = useImageFilters();
@@ -56,8 +57,11 @@ const App: React.FC = () => {
       // 1. Engine is PADDLE
       // 2. Auto-rotation is enabled
       // 3. There's a preview image loaded
-      // 4. Not currently processing
-      if (engine === 'PADDLE' && autoRotateEnabled && previewUrl && status === ExtractionStatus.IDLE) {
+      // 4. Haven't already auto-rotated this specific image
+      if (engine === 'PADDLE' && autoRotateEnabled && previewUrl && autoRotationDoneRef.current !== previewUrl) {
+        // Mark this image as being processed to prevent duplicate runs
+        autoRotationDoneRef.current = previewUrl;
+
         addLog('Auto-detecting text orientation...', 'INFO');
         try {
           const angleResult = await detectRotationAngle(
@@ -71,6 +75,8 @@ const App: React.FC = () => {
             addLog(`Detected rotation: ${angleResult.angle}° - auto-correcting...`, 'SUCCESS');
             const rotatedImage = await rotateImage(previewUrl, angleResult.angle);
             setPreviewUrl(rotatedImage);
+            // Update the ref to the rotated image URL
+            autoRotationDoneRef.current = rotatedImage;
             addLog(`Image auto-rotated ${angleResult.angle}° for optimal OCR`, 'SUCCESS');
           } else if (angleResult.angle === 0) {
             addLog('No rotation correction needed', 'INFO');
@@ -85,7 +91,7 @@ const App: React.FC = () => {
     };
 
     runAutoRotation();
-  }, [engine, autoRotateEnabled, previewUrl, status, addLog]);
+  }, [engine, autoRotateEnabled, previewUrl, addLog]);
 
   const processFileSelection = useCallback(async (file: File) => {
     setSelectedFile(file);
@@ -98,6 +104,7 @@ const App: React.FC = () => {
     setProcessedImage(null);
     setViewMode('edit');
     setActiveLeftTab('editor');
+    autoRotationDoneRef.current = null; // Reset auto-rotation tracking for new file
 
     const isHeic = isHeicFile(file);
     setIsHeic(isHeic);
@@ -481,7 +488,7 @@ const App: React.FC = () => {
   useKeyboardShortcuts(shortcuts, shortcutsEnabled);
 
   return (
-    <div className="min-h-screen w-screen flex flex-col font-sans text-gray-300 selection:bg-emerald-500/30 overflow-x-hidden">
+    <div className="min-h-screen flex flex-col font-sans text-gray-300 selection:bg-emerald-500/30 overflow-x-hidden max-w-full">
       {/* Header */}
       <header className="h-14 border-b border-gray-800 bg-gray-950 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-10">
         <div className="flex items-center space-x-2">

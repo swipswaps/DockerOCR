@@ -150,30 +150,43 @@ def main():
         except Exception as e:
             print(f"⚠️ Could not read console logs: {e}")
 
-        # Try to read the UI logs
-        print("\n📋 Checking UI log panel...")
+        # Try to read the UI logs from Terminal component
+        print("\n📋 Checking UI Terminal logs...")
         try:
-            # Click on the Logs tab if it exists
-            try:
-                logs_tab = driver.find_element(By.XPATH, "//*[contains(text(), 'Logs') or contains(text(), 'Log')]")
-                logs_tab.click()
-                time.sleep(1)
-                print("✅ Clicked Logs tab")
-            except:
-                print("⚠️ No Logs tab found")
+            # The Terminal component shows logs in the Process tab
+            # Look for all log entries
+            log_elements = driver.find_elements(By.CSS_SELECTOR, "div[class*='log'], pre, .log-entry, [class*='console'], [class*='terminal']")
 
-            # Try to find log content
-            log_elements = driver.find_elements(By.CSS_SELECTOR, "div[class*='log'], pre, .log-entry, [class*='console']")
-            if log_elements:
-                print(f"✅ Found {len(log_elements)} log elements")
-                for i, elem in enumerate(log_elements[:20]):  # First 20
-                    text = elem.text.strip()
-                    if text and any(keyword in text.lower() for keyword in ['rotation', 'orientation', 'analyzing', 'tesseract', 'auto-detect']):
-                        print(f"  📝 Log {i+1}: {text[:100]}")
+            # Also try to get all text from the terminal/log area
+            terminal_divs = driver.find_elements(By.XPATH, "//div[contains(@class, 'font-mono') or contains(@class, 'text-xs')]")
+
+            all_log_text = []
+            for elem in terminal_divs:
+                text = elem.text.strip()
+                if text:
+                    all_log_text.append(text)
+
+            print(f"✅ Found {len(all_log_text)} potential log entries")
+
+            # Print ALL logs to see what's happening
+            print("\n📝 ALL APPLICATION LOGS:")
+            for i, text in enumerate(all_log_text):
+                if any(keyword in text for keyword in ['INFO', 'WARN', 'SUCCESS', 'ERROR', 'DEBUG']):
+                    print(f"  {text}")
+
+            # Check specifically for rotation/orientation logs
+            rotation_logs = [text for text in all_log_text if any(keyword in text.lower() for keyword in ['rotation', 'orientation', 'analyzing', 'tesseract', 'auto-detect', 'debug', 'osd'])]
+            if rotation_logs:
+                print(f"\n✅ Found {len(rotation_logs)} rotation-related logs:")
+                for log in rotation_logs:
+                    print(f"  📝 {log}")
             else:
-                print("⚠️ No log elements found in UI")
+                print("\n❌ NO ROTATION-RELATED LOGS FOUND IN UI!")
+
         except Exception as e:
             print(f"⚠️ Could not read UI logs: {e}")
+            import traceback
+            traceback.print_exc()
 
         # Take final screenshot
         driver.save_screenshot("prove-rotation-issue.png")
