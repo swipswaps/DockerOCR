@@ -190,7 +190,7 @@ The application has a **two-column layout**:
      - Error messages with troubleshooting hints
 
    ![Process Tab](screenshots/05-process-tab.png)
-   *Process tab before extraction - OCR engine selector (PaddleOCR selected) and empty terminal*
+   *Process tab before extraction - OCR engine selector (Gemini selected) and empty terminal*
 
    ![Extraction Running](screenshots/06-extraction-running.png)
    *During extraction - terminal shows real-time logs from PaddleOCR Docker container*
