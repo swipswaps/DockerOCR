@@ -3,7 +3,7 @@ import { createWorker, PSM } from 'tesseract.js';
 export interface AngleDetectionResult {
   angle: number;
   confidence: number;
-  method: 'tesseract' | 'manual';
+  method: 'tesseract' | 'manual' | 'dimension-heuristic';
 }
 
 /**
@@ -59,9 +59,43 @@ export async function detectRotationAngle(
 
     // Check if OSD output is empty - this means Tesseract couldn't detect orientation
     if (!osdText || osdText.trim() === '') {
-      const errorMsg = 'Tesseract OSD returned empty output - image may not contain detectable text or HEIC conversion already applied rotation';
-      onProgress?.(100, `ERROR: ${errorMsg}`);
-      throw new Error(errorMsg);
+      const errorMsg = 'Tesseract OSD returned empty output - falling back to dimension-based heuristic';
+      onProgress?.(70, `WARN: ${errorMsg}`);
+
+      // Fallback: Use image dimensions to guess rotation
+      // If image is portrait (height > width), it might need 90° or 270° rotation
+      onProgress?.(80, 'Trying dimension-based rotation detection...');
+
+      const img = new Image();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = imageData;
+      });
+
+      const width = img.naturalWidth || img.width;
+      const height = img.naturalHeight || img.height;
+
+      onProgress?.(90, `Image dimensions: ${width}x${height}`);
+
+      // If portrait orientation (height > width), suggest 270° rotation (90° clockwise)
+      // This is a common case for photos taken in portrait mode
+      if (height > width) {
+        const ratio = height / width;
+        onProgress?.(100, `Portrait image detected (ratio ${ratio.toFixed(2)}:1) - suggesting 270° rotation`);
+        return {
+          angle: 270,
+          confidence: 0.6, // Medium confidence since this is a heuristic
+          method: 'dimension-heuristic'
+        };
+      } else {
+        onProgress?.(100, `Landscape image detected - no rotation suggested`);
+        return {
+          angle: 0,
+          confidence: 0.5,
+          method: 'dimension-heuristic'
+        };
+      }
     }
 
     // Extract rotation angle from OSD output
