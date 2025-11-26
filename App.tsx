@@ -10,6 +10,7 @@ import ImagePreview, { ImagePreviewRef } from './components/ImagePreview';
 import LoadingSpinner from './components/LoadingSpinner';
 import HelpModal from './components/HelpModal';
 import DockerSetupHelper from './components/DockerSetupHelper';
+import { DockerHealthIndicator } from './components/DockerHealthIndicator';
 import { performOCRExtraction } from './services/ocrService';
 import { detectRotationAngle, rotateImage } from './services/angleDetectionService';
 import { DEFAULT_VIEW_STATE, PROCESSING_DELAY } from './constants';
@@ -32,12 +33,13 @@ const App: React.FC = () => {
   const [viewState, setViewState] = useState(DEFAULT_VIEW_STATE);
   const [isHeic, setIsHeic] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
-  const [engine, setEngine] = useState<OCREngine>('GEMINI');
+  const [engine, setEngine] = useState<OCREngine>('PADDLE'); // Default to PaddleOCR (no API key needed)
   const [activeLeftTab, setActiveLeftTab] = useState<LeftTab>('source');
   const [viewMode, setViewMode] = useState<ViewMode>('edit');
   const [showHelp, setShowHelp] = useState(false);
   const [showDockerSetup, setShowDockerSetup] = useState(false);
   const [autoRotateEnabled, setAutoRotateEnabled] = useState(true); // Auto-rotation enabled by default
+  const [isDockerHealthy, setIsDockerHealthy] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imagePreviewRef = useRef<ImagePreviewRef>(null);
@@ -46,6 +48,14 @@ const App: React.FC = () => {
   // Custom hooks - MUST be called unconditionally
   const { filters, setFilters, resetFilters } = useImageFilters();
   const { logs, addLog, clearLogs } = useLogger();
+
+  // Log warning when Docker is unavailable but don't auto-switch engines
+  // User should use localhost:3000 or manually choose Gemini if they have API key
+  useEffect(() => {
+    if (engine === 'PADDLE' && !isDockerHealthy) {
+      addLog('⚠️  Docker unavailable - PaddleOCR requires Docker. Please use localhost:3000 or start Docker.', 'WARN');
+    }
+  }, [engine, isDockerHealthy, addLog]);
 
   // Check API key availability
   const apiKeyConfigured = useMemo(() => hasApiKey(), []);
@@ -734,19 +744,24 @@ const App: React.FC = () => {
                 <div className="bg-gray-900 rounded-xl border border-gray-800 p-5 space-y-6">
                   <div>
                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">OCR Engine</label>
-                     <select 
+                     <select
                         value={engine}
                         onChange={(e) => setEngine(e.target.value as OCREngine)}
                         className="w-full bg-gray-800 text-gray-200 text-sm rounded-lg px-3 py-2.5 border border-gray-700 focus:border-emerald-500 outline-none transition-all"
                         disabled={status === ExtractionStatus.PROCESSING}
                       >
-                        <option value="GEMINI">Gemini Vision 2.5 (Recommended)</option>
-                        <option value="PADDLE">PaddleOCR (Docker/Local)</option>
+                        <option value="PADDLE">PaddleOCR (Local/Docker - No API Key)</option>
+                        <option value="GEMINI">Gemini Vision 2.5 (Cloud AI - Requires API Key)</option>
                       </select>
                       <p className="text-[10px] text-gray-500 mt-2">
-                        {engine === 'GEMINI' ? 'High accuracy cloud model. Best for handwriting and complex layouts.' : 'Runs in local Docker container. Best for privacy and speed on local network.'}
+                        {engine === 'PADDLE' ? 'Privacy-focused local processing. No API key required. Runs in Docker container.' : 'High accuracy cloud AI. Best for handwriting and complex layouts. Requires Gemini API key.'}
                       </p>
                   </div>
+
+                  {/* Docker Health Indicator - only show for PaddleOCR */}
+                  {engine === 'PADDLE' && (
+                    <DockerHealthIndicator onStatusChange={setIsDockerHealthy} />
+                  )}
 
                   <button
                     disabled={!selectedFile || status === ExtractionStatus.PROCESSING || isConverting}

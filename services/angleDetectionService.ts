@@ -1,4 +1,4 @@
-import { createWorker, PSM } from 'tesseract.js';
+import { createWorker } from 'tesseract.js';
 
 export interface AngleDetectionResult {
   angle: number;
@@ -36,99 +36,78 @@ export async function detectRotationAngle(
       }
     });
 
-    // Set PSM (Page Segmentation Mode) to OSD_ONLY (Orientation and Script Detection)
-    // This is faster than full OCR as it only detects orientation
-    await worker.setParameters({
-      tessedit_pageseg_mode: PSM.OSD_ONLY,
-    });
+    // Tesseract.js cannot properly detect rotation (OSD mode returns empty, AUTO mode auto-corrects)
+    // Use PaddleOCR server's Tesseract OSD endpoint instead (integrated into Docker container)
+    onProgress?.(50, 'Calling Tesseract OSD for rotation detection...');
 
-    onProgress?.(50, 'Analyzing image orientation...');
-
-    // Use recognize() but with PSM OSD_ONLY it will only do orientation detection
-    const { data } = await worker.recognize(imageData);
-
-    await worker.terminate();
-
-    // Parse the OSD (Orientation and Script Detection) output
-    // The data.osd contains text like "Orientation: 0\nRotate: 90\n..."
-    const osdText = data.osd || '';
-
-    // DEBUG: Log the raw OSD output to understand what Tesseract is detecting
-    onProgress?.(60, `DEBUG: OSD output: ${osdText.replace(/\n/g, ' | ')}`);
-    onProgress?.(70, `DEBUG: data.text=${data.text?.substring(0, 50) || 'none'}, confidence=${data.confidence}, rotateRadians=${data.rotateRadians}`);
-
-    // Check if OSD output is empty - this means Tesseract couldn't detect orientation
-    if (!osdText || osdText.trim() === '') {
-      const errorMsg = 'Tesseract OSD returned empty output - falling back to dimension-based heuristic';
-      onProgress?.(70, `WARN: ${errorMsg}`);
-
-      // Fallback: Use image dimensions to guess rotation
-      // If image is portrait (height > width), it might need 90° or 270° rotation
-      onProgress?.(80, 'Trying dimension-based rotation detection...');
-
-      const img = new Image();
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-        img.src = imageData;
+    try {
+      const response = await fetch('http://localhost:5000/detect-rotation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: imageData
+        })
       });
 
-      const width = img.naturalWidth || img.width;
-      const height = img.naturalHeight || img.height;
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}`);
+      }
 
-      onProgress?.(90, `Image dimensions: ${width}x${height}`);
+      const result = await response.json();
 
-      // If portrait orientation (height > width), suggest 270° rotation (90° clockwise)
-      // This is a common case for photos taken in portrait mode
-      if (height > width) {
-        const ratio = height / width;
-        onProgress?.(100, `Portrait image detected (ratio ${ratio.toFixed(2)}:1) - suggesting 270° rotation`);
+      onProgress?.(70, `DEBUG: Tesseract OSD result: orientation=${result.orientation}°, rotate=${result.rotate}°, confidence=${result.confidence}`);
+
+      if (result.success && result.orientation !== undefined) {
+        const orientation = result.orientation;
+        // Tesseract OSD confidence is on 0-15 scale, normalize to 0-1
+        const confidence = Math.min(result.confidence / 15, 1.0);
+
+        onProgress?.(80, `✅ Tesseract OSD detected: ${orientation}° rotation (confidence: ${result.confidence.toFixed(1)}/15 = ${(confidence * 100).toFixed(0)}%)`);
+
+        // Tesseract reports current orientation, we need to apply correction
+        // "Orientation in degrees: 90" means image is rotated 90° clockwise
+        // We need to rotate 270° to correct it (90° counter-clockwise)
+        let correctionAngle = 0;
+        if (orientation === 90) {
+          correctionAngle = 270;
+        } else if (orientation === 180) {
+          correctionAngle = 180;
+        } else if (orientation === 270) {
+          correctionAngle = 90;
+        }
+
+        onProgress?.(100, `Applying ${correctionAngle}° rotation to correct ${orientation}° orientation`);
+
+        await worker.terminate();
+
         return {
-          angle: 270,
-          confidence: 0.6, // Medium confidence since this is a heuristic
-          method: 'dimension-heuristic'
-        };
-      } else {
-        onProgress?.(100, `Landscape image detected - no rotation suggested`);
-        return {
-          angle: 0,
-          confidence: 0.5,
-          method: 'dimension-heuristic'
+          angle: correctionAngle,
+          confidence: confidence,
+          method: 'tesseract'
         };
       }
+
+      throw new Error('No orientation data in server response');
+
+    } catch (serverError) {
+      // Server not available or failed - fall back to assuming no rotation
+      onProgress?.(60, `WARN: Tesseract OSD unavailable: ${serverError}`);
+      onProgress?.(70, `PaddleOCR container may not be running or Tesseract not installed`);
+
+      // Terminate worker since we're not using it
+      await worker.terminate();
+
+      // Assume no rotation needed when server is unavailable
+      onProgress?.(100, `Assuming no rotation needed (OSD unavailable)`);
+
+      return {
+        angle: 0,
+        confidence: 0.3,
+        method: 'dimension-heuristic'
+      };
     }
-
-    // Extract rotation angle from OSD output
-    // Format: "Rotate: 90" means image needs 90° rotation to be upright
-    const rotateMatch = osdText.match(/Rotate:\s*(\d+)/);
-    const detectedAngle = rotateMatch ? parseInt(rotateMatch[1], 10) : 0;
-
-    // Extract orientation confidence if available
-    // Format: "Orientation confidence: 12.34"
-    const confMatch = osdText.match(/Orientation confidence:\s*([\d.]+)/);
-    const rawConfidence = confMatch ? parseFloat(confMatch[1]) : 10;
-
-    // Tesseract OSD confidence is typically 0-15 scale, normalize to 0-1
-    const confidence = Math.min(rawConfidence / 15, 1.0);
-
-    onProgress?.(100, `Detected rotation: ${detectedAngle}° (confidence: ${(confidence * 100).toFixed(0)}%)`);
-
-    // Calculate the correction angle (inverse of detected rotation)
-    // If text is rotated 90° clockwise, we need to rotate 270° to correct it
-    let correctionAngle = 0;
-    if (detectedAngle === 90) {
-      correctionAngle = 270;
-    } else if (detectedAngle === 180) {
-      correctionAngle = 180;
-    } else if (detectedAngle === 270) {
-      correctionAngle = 90;
-    }
-
-    return {
-      angle: correctionAngle,
-      confidence,
-      method: 'tesseract'
-    };
   } catch (error) {
     console.error('Angle detection failed:', error);
     const errorMsg = error instanceof Error ? error.message : String(error);

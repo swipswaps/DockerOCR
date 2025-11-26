@@ -16,6 +16,9 @@ import sys
 from collections import deque
 from datetime import datetime
 import cv2
+import subprocess
+import tempfile
+import os
 
 # Configure logging with custom handler to capture logs
 logging.basicConfig(
@@ -44,7 +47,23 @@ log_capture.setFormatter(logging.Formatter('%(message)s'))
 logger.addHandler(log_capture)
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for frontend requests
+
+# Enable CORS for both local development and GitHub Pages deployment
+# This allows the GitHub Pages app to connect to user's local Docker instance
+CORS(app, resources={
+    r"/*": {
+        "origins": [
+            "http://localhost:3000",           # Local development
+            "http://localhost:5173",           # Vite dev server
+            "http://127.0.0.1:3000",          # Local development (127.0.0.1)
+            "http://127.0.0.1:5173",          # Vite dev server (127.0.0.1)
+            "https://swipswaps.github.io",    # GitHub Pages deployment
+        ],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"],
+        "supports_credentials": False
+    }
+})
 
 # Initialize PaddleOCR (this will download models on first run)
 logger.info("🚀 Initializing PaddleOCR...")
@@ -265,6 +284,98 @@ def get_logs():
         'logs': list(recent_logs),
         'count': len(recent_logs)
     }), 200
+
+
+@app.route('/detect-rotation', methods=['POST'])
+def detect_rotation():
+    """
+    Tesseract OSD (Orientation and Script Detection) endpoint for rotation detection.
+    Accepts base64 image data and returns Tesseract OSD results.
+
+    This provides proper rotation detection that Tesseract.js cannot do reliably.
+    """
+    try:
+        logger.info("🔄 Rotation detection request received")
+
+        data = request.get_json()
+
+        if not data or 'image' not in data:
+            logger.error("❌ No image data provided for rotation detection")
+            return jsonify({'error': 'No image data provided'}), 400
+
+        # Extract base64 image data
+        image_data = data['image']
+
+        # Remove data URL prefix if present (e.g., "data:image/png;base64,")
+        if ',' in image_data:
+            image_data = image_data.split(',')[1]
+
+        # Decode base64
+        logger.info("🔓 Decoding base64 image for rotation detection...")
+        img_bytes = base64.b64decode(image_data)
+        logger.info(f"✅ Decoded {len(img_bytes)} bytes")
+
+        # Save to temporary file
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+            tmp.write(img_bytes)
+            tmp_path = tmp.name
+
+        logger.info(f"💾 Saved temp file: {tmp_path}")
+
+        try:
+            # Run Tesseract OSD (Orientation and Script Detection)
+            logger.info("🔍 Running Tesseract OSD...")
+            result = subprocess.run(
+                ['tesseract', tmp_path, 'stdout', '--psm', '0'],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+            osd_output = result.stdout
+            logger.info(f"📄 Tesseract OSD output:\n{osd_output}")
+
+            # Parse orientation from OSD output
+            orientation = 0
+            rotate = 0
+            confidence = 0
+            script = 'Unknown'
+
+            for line in osd_output.split('\n'):
+                if 'Orientation in degrees:' in line:
+                    orientation = int(line.split(':')[1].strip())
+                elif 'Rotate:' in line:
+                    rotate = int(line.split(':')[1].strip())
+                elif 'Orientation confidence:' in line:
+                    confidence = float(line.split(':')[1].strip())
+                elif 'Script:' in line:
+                    script = line.split(':')[1].strip()
+
+            logger.info(f"✅ Detected: orientation={orientation}°, rotate={rotate}°, confidence={confidence:.2f}, script={script}")
+
+            return jsonify({
+                'success': True,
+                'orientation': orientation,
+                'rotate': rotate,
+                'confidence': confidence,
+                'script': script,
+                'raw_output': osd_output
+            })
+
+        finally:
+            # Clean up temp file
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+                logger.info(f"🗑️  Cleaned up temp file: {tmp_path}")
+
+    except subprocess.TimeoutExpired:
+        logger.error("❌ Tesseract OSD timed out")
+        return jsonify({'error': 'Tesseract OSD timed out'}), 500
+    except Exception as e:
+        logger.error(f"❌ Rotation detection failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/ocr', methods=['POST'])

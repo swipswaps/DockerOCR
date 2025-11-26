@@ -59,6 +59,136 @@
       ::-webkit-scrollbar-thumb:hover {
         background: #4b5563;
       }
+
+      /* Docker Health Indicator Styles */
+      .docker-health-indicator {
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+      }
+
+      .docker-health-indicator.healthy {
+        background-color: #064e3b;
+        border: 1px solid #10b981;
+      }
+
+      .docker-health-indicator.unhealthy {
+        background-color: #7f1d1d;
+        border: 1px solid #ef4444;
+      }
+
+      .docker-health-indicator.checking {
+        background-color: #1e3a8a;
+        border: 1px solid #3b82f6;
+      }
+
+      .docker-health-indicator .status-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+      }
+
+      .docker-health-indicator .status-icon {
+        font-size: 18px;
+      }
+
+      .docker-health-indicator .status-text {
+        flex: 1;
+        font-weight: 600;
+      }
+
+      .docker-health-indicator .expand-icon {
+        font-size: 12px;
+        opacity: 0.7;
+      }
+
+      .docker-health-indicator .status-details {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .docker-health-indicator .error-message {
+        color: #fca5a5;
+        margin-bottom: 16px;
+        font-size: 13px;
+      }
+
+      .docker-health-indicator .recovery-actions h4 {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 12px;
+      }
+
+      .docker-health-indicator .action-button {
+        width: 100%;
+        padding: 10px 16px;
+        border-radius: 6px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-bottom: 12px;
+      }
+
+      .docker-health-indicator .action-button.retry {
+        background-color: #3b82f6;
+        color: white;
+      }
+
+      .docker-health-indicator .action-button.retry:hover:not(:disabled) {
+        background-color: #2563eb;
+      }
+
+      .docker-health-indicator .action-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .docker-health-indicator .fallback-info,
+      .docker-health-indicator .localhost-suggestion {
+        background-color: rgba(0, 0, 0, 0.3);
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 12px;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .docker-health-indicator .fallback-info p,
+      .docker-health-indicator .localhost-suggestion p {
+        margin: 4px 0;
+      }
+
+      .docker-health-indicator code {
+        background-color: rgba(0, 0, 0, 0.5);
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        display: inline-block;
+        margin-top: 8px;
+      }
+
+      .docker-health-indicator .localhost-link {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 8px 16px;
+        background-color: #10b981;
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+      }
+
+      .docker-health-indicator .localhost-link:hover {
+        background-color: #059669;
+        transform: translateY(-1px);
+      }
     </style>
   </head>
   <body>

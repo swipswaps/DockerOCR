@@ -2,7 +2,7 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies including Tesseract for rotation detection and curl for health checks
 RUN apt-get update && apt-get install -y \
     libgomp1 \
     libglib2.0-0 \
@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     libxrender-dev \
     libgl1 \
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies

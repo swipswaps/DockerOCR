@@ -61,18 +61,19 @@
 | **Table Support** | ✅ Excellent | ✅ Good (column detection) |
 | **Multi-language** | ✅ 100+ languages | ✅ English + others |
 
-**Gemini Vision 2.5** (Cloud, Recommended)
+**PaddleOCR** (Local Docker, Default)
+- Privacy-focused, runs entirely on your machine
+- Fast processing with table-aware text sorting
+- **No API key required** - works offline
+- Automatic column detection for multi-column tables
+- Histogram-based column boundary detection
+- Automatic rotation detection with Tesseract OSD
+
+**Gemini Vision 2.5** (Cloud, Optional)
 - High accuracy for handwriting and complex layouts
 - Best for multi-column tables and structured documents
 - Requires Google Gemini API key
 - Handles rotated text automatically
-
-**PaddleOCR** (Local Docker)
-- Privacy-focused, runs entirely on your machine
-- Fast processing with table-aware text sorting
-- No API key required
-- Automatic column detection for multi-column tables
-- Histogram-based column boundary detection
 
 ### 📊 **Export Formats**
 - **JSON**: Full structured data with bounding boxes and confidence scores
@@ -125,24 +126,65 @@
 
    Get your Gemini API key from: https://aistudio.google.com/app/apikey
 
-4. **Start PaddleOCR Docker container (optional):**
+4. **Start the application with automatic Docker health check (recommended):**
    ```bash
+   npm start
+   ```
+
+   This will automatically:
+   - Check if Docker is running
+   - Start Docker if needed
+   - Start PaddleOCR container if needed
+   - Launch the development server
+
+   **Or manually start Docker and the app:**
+   ```bash
+   # Start PaddleOCR Docker container (optional)
    docker compose up -d
 
    # Verify it's running
    curl http://localhost:5000/health
    # Should return: {"status":"healthy","service":"PaddleOCR"}
-   ```
 
-5. **Run the application:**
-   ```bash
+   # Run the application
    npm run dev
    ```
 
-6. **Open in browser:**
+5. **Open in browser:**
    ```
    http://localhost:3000
    ```
+
+### 🔧 Docker Management Scripts
+
+The app includes self-healing Docker management scripts:
+
+```bash
+# Check Docker health and auto-start if needed
+npm run docker:check
+
+# Start Docker containers
+npm run docker:start
+
+# Stop Docker containers
+npm run docker:stop
+
+# View Docker logs
+npm run docker:logs
+```
+
+### 🏥 Self-Healing Features
+
+The application automatically handles Docker connectivity issues:
+
+- **Automatic Health Monitoring**: Continuously checks Docker availability every 10 seconds
+- **Auto-Retry**: Automatically retries failed connections up to 3 times
+- **Smart Guidance**: Shows helpful error messages and recovery options in the UI
+- **One-Click Recovery**: Retry button to manually trigger reconnection
+- **Localhost Redirect**: Guides you to use `http://localhost:3000` when GitHub Pages has connectivity issues
+- **No Forced Fallback**: Keeps PaddleOCR as default - you choose Gemini only if you want cloud AI
+
+**No manual troubleshooting required!** The app handles Docker issues gracefully and guides you to recovery.
 
 ---
 
@@ -411,7 +453,50 @@ npm run dev
 
 ---
 
-#### 6. **Port 5000 Already in Use**
+#### 6. **Automatic Rotation Not Working**
+
+**Symptoms:**
+- Image is rotated but auto-rotation doesn't detect it
+- Terminal shows "Assuming no rotation needed (OSD unavailable)"
+- Confidence is 0% or very low
+
+**Solutions:**
+
+**Check if PaddleOCR container is running:**
+```bash
+docker ps | grep paddleocr
+```
+
+**Verify Tesseract is installed in container:**
+```bash
+docker exec paddleocr-server tesseract --version
+# Should show: tesseract 5.x.x
+```
+
+**Check rotation detection endpoint:**
+```bash
+curl http://localhost:5000/detect-rotation -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"image":"iVBORw0KGgoAAAANS..."}'
+```
+
+**Rebuild container if Tesseract is missing:**
+```bash
+docker compose down
+docker compose build --no-cache
+docker compose up -d
+```
+
+**Manual rotation:**
+- If auto-rotation fails, manually rotate the image in the Editor tab
+- Use the rotation buttons (90° left/right)
+- Rotation is applied before OCR extraction
+
+**Note:** Tesseract OSD works best with images containing multiple words. Single words or very short text may return low confidence.
+
+---
+
+#### 7. **Port 5000 Already in Use**
 
 **Symptoms:**
 - Error: "Bind for 0.0.0.0:5000 failed: port is already allocated"
@@ -439,7 +524,7 @@ Then update the frontend to use the new port (if needed).
 
 ---
 
-#### 7. **Build Errors**
+#### 8. **Build Errors**
 
 **Symptoms:**
 - `npm run build` fails with TypeScript errors
@@ -496,6 +581,220 @@ docker stats paddleocr-server
 
 ---
 
+## 🔬 How It Works: OCR Tools & Technologies
+
+This application uses multiple OCR engines and image processing tools working together to provide accurate text extraction. Here's a detailed explanation of each component:
+
+### 🤖 OCR Engines
+
+#### **1. Gemini Vision 2.5 (Cloud-based)**
+
+**What it is:**
+- Google's advanced multimodal AI model with vision capabilities
+- Cloud-based API service that processes images remotely
+
+**How it works:**
+1. Image is converted to base64 format
+2. Sent to Google's Gemini API via HTTPS
+3. Gemini analyzes the image using deep learning models
+4. Returns structured JSON with extracted text, confidence scores, and bounding boxes
+5. Handles rotation, skew, and complex layouts automatically
+
+**Best for:**
+- Handwritten text
+- Complex multi-column layouts
+- Tables with merged cells
+- Low-quality or skewed images
+- Multi-language documents
+
+**Technical details:**
+- Model: `gemini-2.0-flash-exp`
+- API endpoint: `https://generativelanguage.googleapis.com/v1beta/models/`
+- Response format: JSON with text blocks, coordinates, and confidence scores
+- Automatic text orientation detection and correction
+
+---
+
+#### **2. PaddleOCR (Local Docker)**
+
+**What it is:**
+- Open-source OCR toolkit developed by Baidu's PaddlePaddle team
+- Runs locally in a Docker container for complete privacy
+- Uses deep learning models for text detection and recognition
+
+**How it works:**
+1. **Text Detection**: Detects text regions using DB (Differentiable Binarization) model
+2. **Text Recognition**: Recognizes characters using CRNN (Convolutional Recurrent Neural Network)
+3. **Post-processing**: Sorts text blocks by reading order using table-aware algorithm
+
+**Architecture:**
+```
+Image → Text Detection → Text Recognition → Table-Aware Sorting → Results
+         (DB Model)       (CRNN Model)       (Column Detection)
+```
+
+**Configuration:**
+- **Angle Classification**: DISABLED (incompatible with Intel N100 CPU)
+  - Reason: `text_classifier` causes "RuntimeError: could not execute a primitive"
+  - Solution: Client-side rotation detection using Tesseract OSD (see below)
+- **MKLDNN**: Disabled (`enable_mkldnn=False`)
+- **CPU Threads**: 1 (`cpu_threads=1`)
+- **Multiprocessing**: Disabled (`use_mp=False`)
+
+**Table-Aware Sorting:**
+- Analyzes horizontal distribution of text blocks
+- Creates histogram of x-coordinates to detect column boundaries
+- Sorts text within each column from top to bottom
+- Merges columns from left to right for final reading order
+
+**Best for:**
+- Privacy-sensitive documents (100% local processing)
+- Simple documents with clear text
+- Multi-column layouts with distinct columns
+- Fast batch processing
+
+---
+
+### 🔄 Automatic Rotation Detection
+
+Since PaddleOCR's built-in angle classifier is disabled, the application uses **Tesseract OSD (Orientation and Script Detection)** for automatic rotation detection.
+
+**What is Tesseract OSD?**
+- Tesseract is an open-source OCR engine originally developed by HP, now maintained by Google
+- OSD mode (`--psm 0`) detects text orientation without performing full OCR
+- Returns: orientation angle (0°/90°/180°/270°), rotation needed, and confidence score
+
+**How it works:**
+1. **Image Upload**: User uploads an image (e.g., HEIC file rotated 90° right)
+2. **HEIC Conversion**: Browser converts HEIC to PNG using `heic2any` library
+3. **Auto-Rotation Trigger**: When user switches to PaddleOCR engine, auto-rotation runs
+4. **Tesseract OSD Call**:
+   - Image sent as base64 to PaddleOCR container's `/detect-rotation` endpoint
+   - Container runs: `tesseract image.png stdout --psm 0`
+   - Tesseract analyzes text orientation and returns results
+5. **Rotation Decision**:
+   - If confidence > 50% and rotation detected (e.g., 90°)
+   - Apply correction rotation (e.g., 270° = 90° counter-clockwise)
+   - Update image preview and log the rotation
+6. **OCR Extraction**: Corrected image is sent to PaddleOCR for text extraction
+
+**Example OSD Output:**
+```
+Orientation in degrees: 90
+Rotate: 270
+Orientation confidence: 12.17
+Script: Latin
+```
+
+**Interpretation:**
+- **Orientation: 90°** = Image is rotated 90° clockwise (right)
+- **Rotate: 270°** = Need to rotate 270° clockwise (= 90° counter-clockwise) to fix
+- **Confidence: 12.17/15** = 81% confidence (Tesseract uses 0-15 scale)
+
+**Integration:**
+- Tesseract is installed in the PaddleOCR Docker container
+- No separate server needed - fully automated
+- Runs only when needed (when switching to PaddleOCR with rotated image)
+
+---
+
+### 🖼️ Image Processing Pipeline
+
+**1. HEIC to PNG Conversion**
+- **Library**: `heic2any` (browser-based)
+- **Process**: Decodes HEIC format and converts to PNG blob
+- **EXIF Handling**: Preserves EXIF orientation metadata
+- **Note**: HEIC images may still need rotation correction after conversion
+
+**2. Image Transformations**
+- **Rotation**: Canvas API `rotate()` method (90° increments)
+- **Flip**: Canvas API `scale(-1, 1)` for horizontal, `scale(1, -1)` for vertical
+- **Filters**: Canvas API `filter` property (contrast, brightness, grayscale)
+- **Crop**: Canvas API `drawImage()` with source rectangle
+
+**3. Base64 Encoding**
+- All images are converted to base64 before sending to OCR engines
+- Format: `data:image/png;base64,iVBORw0KGgoAAAANS...`
+- Allows easy transmission via JSON API calls
+
+---
+
+### 📊 Export Formats
+
+**1. JSON**
+- Full structured data with all metadata
+- Includes: text, confidence, bounding boxes, reading order
+- Format: `[{text: "...", confidence: 0.95, bbox: [[x1,y1], [x2,y2], ...]}]`
+
+**2. Plain Text**
+- Extracted text in reading order
+- Newlines preserved between text blocks
+- No metadata or coordinates
+
+**3. CSV**
+- Comma-separated values
+- Columns: Text, Confidence, X1, Y1, X2, Y2, X3, Y3, X4, Y4
+- Compatible with Excel, Google Sheets
+
+**4. XLSX (Excel)**
+- **Library**: ExcelJS
+- Formatted spreadsheet with headers
+- Columns: Text, Confidence, Bounding Box
+- Downloadable as `.xlsx` file
+
+**5. SQL**
+- INSERT statements for database import
+- Table: `ocr_results`
+- Columns: `id`, `text`, `confidence`, `bbox_json`
+- Ready to execute in MySQL, PostgreSQL, SQLite
+
+---
+
+### 🐳 Docker Container Architecture
+
+**PaddleOCR Container:**
+- **Base Image**: `python:3.9-slim`
+- **Installed Packages**:
+  - PaddlePaddle 2.6.1 (CPU version)
+  - PaddleOCR 2.7.3
+  - Flask 3.0.0 (API server)
+  - Tesseract OCR 5.x (for rotation detection)
+  - System libraries: libgomp1, libglib2.0-0, libsm6, libxext6, libxrender-dev, libgl1
+
+**Endpoints:**
+- `GET /health` - Health check (returns `{"status":"healthy","service":"PaddleOCR"}`)
+- `POST /ocr` - Text extraction (accepts base64 image, returns OCR results)
+- `POST /detect-rotation` - Rotation detection (accepts base64 image, returns Tesseract OSD results)
+
+**Container Startup:**
+1. Downloads PaddleOCR models (~200MB) on first run
+2. Initializes PaddleOCR with optimized settings for Intel N100 CPU
+3. Starts Flask server on port 5000
+4. Runs health checks every 30 seconds
+
+**Resource Usage:**
+- Memory: ~500MB-1GB
+- CPU: 1 core (configurable)
+- Disk: ~1GB (models + dependencies)
+
+---
+
+### 🔐 Privacy & Security
+
+**Gemini Vision API:**
+- ⚠️ Images are sent to Google's servers
+- Data is processed according to Google's privacy policy
+- API key required (stored in `.env.local`, never committed to git)
+- Suitable for non-sensitive documents
+
+**PaddleOCR:**
+- ✅ 100% local processing - images never leave your machine
+- No internet connection required (after initial model download)
+- No API keys or accounts needed
+- Ideal for confidential documents, medical records, financial data
+
+---
+
 ## 🏗️ Architecture
 
 ```
@@ -533,12 +832,20 @@ DockerOCR/
 - **Frontend**: React 19.2.0 + TypeScript 5.8.2
 - **Build Tool**: Vite 6.2.0
 - **OCR Engines**:
-  - Google Gemini Vision 2.5 API
-  - PaddleOCR 2.7.3 (Python)
-- **Backend**: Flask (Python 3.9)
-- **Image Processing**: Canvas API, heic2any, exifr
+  - Google Gemini Vision 2.5 API (cloud-based)
+  - PaddleOCR 2.7.3 (local Docker)
+  - Tesseract OCR 5.x (rotation detection)
+- **Backend**: Flask 3.0.0 (Python 3.9)
+- **Image Processing**:
+  - Canvas API (transformations)
+  - heic2any (HEIC conversion)
+  - exifr (EXIF metadata)
 - **Export**: ExcelJS for XLSX generation
 - **Containerization**: Docker + Docker Compose
+- **Deep Learning**:
+  - PaddlePaddle 2.6.1 (CPU)
+  - DB (Differentiable Binarization) for text detection
+  - CRNN (Convolutional Recurrent Neural Network) for text recognition
 
 ---
 
@@ -586,7 +893,66 @@ The app is configured for GitHub Pages deployment:
    - GitHub Actions will automatically build and deploy
    - Live at: `https://yourusername.github.io/DockerOCR/`
 
-**Note**: PaddleOCR requires Docker and won't work on GitHub Pages. Use Gemini Vision API for the hosted version.
+#### **Using PaddleOCR with GitHub Pages**
+
+The GitHub Pages deployment **CAN** use PaddleOCR if you run Docker locally on your machine:
+
+**How it works:**
+1. Visit the GitHub Pages app: `https://swipswaps.github.io/DockerOCR/`
+2. The app runs in your browser (static files from GitHub)
+3. When you select PaddleOCR engine, the browser connects to `http://localhost:5000`
+4. This connects to **your local Docker container** running on your machine
+5. OCR processing happens locally, results sent back to browser
+
+**Setup steps:**
+
+1. **Clone the repository on your local machine:**
+   ```bash
+   git clone https://github.com/swipswaps/DockerOCR.git
+   cd DockerOCR
+   ```
+
+2. **Start the Docker container:**
+   ```bash
+   docker compose up -d
+   ```
+
+3. **Visit GitHub Pages:**
+   ```
+   https://swipswaps.github.io/DockerOCR/
+   ```
+
+4. **Select PaddleOCR engine** - it will connect to your local Docker instance!
+
+**Benefits:**
+- ✅ No need to run `npm install` or `npm run dev`
+- ✅ Always get the latest UI from GitHub Pages
+- ✅ PaddleOCR runs locally for privacy
+- ✅ Automatic rotation detection works (Tesseract in Docker)
+- ✅ Works on any device on your local network
+
+**Troubleshooting:**
+
+If PaddleOCR doesn't work on GitHub Pages:
+
+1. **Check Docker is running:**
+   ```bash
+   docker ps | grep paddleocr
+   ```
+
+2. **Verify container is healthy:**
+   ```bash
+   curl http://localhost:5000/health
+   # Should return: {"status":"healthy","service":"PaddleOCR"}
+   ```
+
+3. **Check browser console** (F12) for CORS or connection errors
+
+4. **Try using `http://` instead of `https://`** - Some browsers block mixed content (HTTPS page accessing HTTP endpoint). If this happens:
+   - Use the local development version instead: `http://localhost:3000`
+   - Or use Gemini Vision API (cloud-based, works everywhere)
+
+**Note**: Gemini Vision API works on GitHub Pages without any local setup.
 
 ### Self-Hosted
 
