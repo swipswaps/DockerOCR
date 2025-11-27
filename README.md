@@ -977,6 +977,15 @@ If PaddleOCR doesn't work on GitHub Pages:
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
+### Developer Reference
+
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for:
+- Critical development rules and anti-patterns
+- TypeScript/ESLint fixes for common issues
+- Testing requirements (localhost + GitHub Pages)
+- Commit checklist
+- Bundle structure and optimization
+
 ---
 
 ## 📄 License
