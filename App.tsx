@@ -39,21 +39,28 @@ const App: React.FC = () => {
   const [showHelp, setShowHelp] = useState(false);
   const [showDockerSetup, setShowDockerSetup] = useState(false);
   const [autoRotateEnabled, setAutoRotateEnabled] = useState(true); // Auto-rotation enabled by default
-  const [isDockerHealthy, setIsDockerHealthy] = useState(false);
+  const [isDockerHealthy, setIsDockerHealthy] = useState<boolean | null>(null); // null = not checked yet
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imagePreviewRef = useRef<ImagePreviewRef>(null);
   const autoRotationDoneRef = useRef<string | null>(null); // Track which image has been auto-rotated
+  const dockerWarningLoggedRef = useRef(false); // Track if Docker warning has been logged
 
   // Custom hooks - MUST be called unconditionally
   const { filters, setFilters, resetFilters } = useImageFilters();
   const { logs, addLog, clearLogs } = useLogger();
 
-  // Log warning when Docker is unavailable but don't auto-switch engines
-  // User should use localhost:3000 or manually choose Gemini if they have API key
+  // Log warning when Docker is confirmed unavailable (after health check completes)
+  // Only log once to avoid spamming the terminal
   useEffect(() => {
-    if (engine === 'PADDLE' && !isDockerHealthy) {
-      addLog('⚠️  Docker unavailable - PaddleOCR requires Docker. Please use localhost:3000 or start Docker.', 'WARN');
+    // Only log if: health check has completed (not null), Docker is unhealthy, and we haven't logged yet
+    if (engine === 'PADDLE' && isDockerHealthy === false && !dockerWarningLoggedRef.current) {
+      dockerWarningLoggedRef.current = true;
+      addLog('⚠️  Docker unavailable - PaddleOCR requires Docker. Please start Docker or switch to Gemini.', 'WARN');
+    }
+    // Reset the logged flag if Docker becomes healthy
+    if (isDockerHealthy === true) {
+      dockerWarningLoggedRef.current = false;
     }
   }, [engine, isDockerHealthy, addLog]);
 
