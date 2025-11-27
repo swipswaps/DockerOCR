@@ -13,26 +13,13 @@ import DockerSetupHelper from './components/DockerSetupHelper';
 import { DockerHealthIndicator } from './components/DockerHealthIndicator';
 import { performOCRExtraction } from './services/ocrService';
 import { detectRotationAngle, rotateImage } from './services/angleDetectionService';
-import { DEFAULT_VIEW_STATE, PROCESSING_DELAY, APP_VERSION } from './constants';
+import { DEFAULT_VIEW_STATE, PROCESSING_DELAY } from './constants';
 import { useImageFilters } from './hooks/useImageFilters';
 import { useLogger } from './hooks/useLogger';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { generateProcessedImage, isHeicFile, formatFileSize, getFileFormat } from './utils/imageProcessing';
 import { hasApiKey } from './config/env';
 import heic2any from 'heic2any';
-
-// Self-healing cache verification: notify HTML that JS bundle loaded correctly
-declare global {
-  interface Window {
-    __DOCKEROCR_VERIFY_VERSION__?: (version: string) => void;
-    __DOCKEROCR_BUILD_VERSION__?: string;
-  }
-}
-
-// Verify version on module load
-if (typeof window !== 'undefined' && window.__DOCKEROCR_VERIFY_VERSION__) {
-  window.__DOCKEROCR_VERIFY_VERSION__(APP_VERSION);
-}
 
 type LeftTab = 'source' | 'editor' | 'process';
 type ViewMode = 'edit' | 'text';
@@ -575,7 +562,7 @@ const App: React.FC = () => {
       {/* Main Content */}
       <main className="flex-1 flex flex-col lg:flex-row p-2 lg:p-4 gap-4 w-full max-w-full">
 
-        {/* Left Column: Tabbed Interface */}
+        {/* Left Column: Tabbed Interface + Terminal */}
         <div className="w-full lg:w-1/2 flex flex-col bg-gray-900/50 rounded-xl border border-gray-800 overflow-hidden min-w-0 min-h-[600px] lg:min-h-0">
           
           {/* Tab Navigation */}
@@ -595,10 +582,9 @@ const App: React.FC = () => {
               <IconTabSliders />
               <span>Editor</span>
             </button>
-            <button 
+            <button
               onClick={() => setActiveLeftTab('process')}
-              disabled={!selectedFile}
-              className={`flex-1 py-3 flex items-center justify-center space-x-2 text-xs font-bold uppercase tracking-widest transition-colors ${activeLeftTab === 'process' ? 'text-emerald-400 bg-gray-800/50 border-b-2 border-emerald-500' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800'} ${!selectedFile ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex-1 py-3 flex items-center justify-center space-x-2 text-xs font-bold uppercase tracking-widest transition-colors ${activeLeftTab === 'process' ? 'text-emerald-400 bg-gray-800/50 border-b-2 border-emerald-500' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800'}`}
             >
               <IconTabPlay />
               <span>Process</span>
@@ -613,8 +599,8 @@ const App: React.FC = () => {
             </button>
           </div>
 
-          {/* Tab Content */}
-          <div className="flex-1 p-4 overflow-y-auto relative">
+          {/* Tab Content - takes up available space minus Terminal */}
+          <div className="flex-1 p-4 overflow-y-auto relative min-h-0" style={{ maxHeight: 'calc(100% - 200px)' }}>
             
             {/* TAB: SOURCE */}
             {activeLeftTab === 'source' && (
@@ -813,15 +799,14 @@ const App: React.FC = () => {
                     </button>
                   )}
                 </div>
-
-                <div className="flex-1 relative min-h-0">
-                   <div className="absolute top-0 left-0 w-full h-full">
-                      <Terminal logs={logs} />
-                   </div>
-                </div>
               </div>
             )}
 
+          </div>
+
+          {/* Terminal - Always Visible */}
+          <div className="h-[200px] border-t border-gray-800 bg-gray-950">
+            <Terminal logs={logs} />
           </div>
         </div>
 
