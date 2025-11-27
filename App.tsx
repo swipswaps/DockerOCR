@@ -50,6 +50,12 @@ const App: React.FC = () => {
   const { filters, setFilters, resetFilters } = useImageFilters();
   const { logs, addLog, clearLogs } = useLogger();
 
+  // Initial app ready log - runs once on mount
+  useEffect(() => {
+    addLog('DockerOCR ready. Upload an image to begin.', 'INFO');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Log warning when Docker is confirmed unavailable (after health check completes)
   // Only log once to avoid spamming the terminal
   useEffect(() => {
