@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { checkContainerHealth, getSetupInstructions, attemptAutoStart, DockerStatus } from '../services/dockerService';
+import {
+  checkContainerHealth,
+  getSetupInstructions,
+  attemptAutoStart,
+  DockerStatus,
+} from '../services/dockerService';
 
 interface DockerSetupHelperProps {
   onClose: () => void;
@@ -14,12 +19,8 @@ const DockerSetupHelper: React.FC<DockerSetupHelperProps> = ({ onClose, onRetry 
   const { platform, instructions } = getSetupInstructions();
 
   const addLog = (msg: string) => {
-    setLogs(prev => [...prev, `${new Date().toLocaleTimeString()} - ${msg}`]);
+    setLogs((prev) => [...prev, `${new Date().toLocaleTimeString()} - ${msg}`]);
   };
-
-  useEffect(() => {
-    checkStatus();
-  }, []);
 
   const checkStatus = async () => {
     setChecking(true);
@@ -30,11 +31,16 @@ const DockerSetupHelper: React.FC<DockerSetupHelperProps> = ({ onClose, onRetry 
     setChecking(false);
   };
 
+  useEffect(() => {
+    checkStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleAutoStart = async () => {
     setAutoStarting(true);
     const success = await attemptAutoStart(addLog);
     setAutoStarting(false);
-    
+
     if (success) {
       addLog('✅ Container started successfully!');
       setTimeout(() => {
@@ -102,8 +108,10 @@ const DockerSetupHelper: React.FC<DockerSetupHelperProps> = ({ onClose, onRetry 
             <div className="bg-blue-900/20 border border-blue-700/50 rounded p-4">
               <h3 className="text-sm font-medium text-blue-300 mb-2">🔧 Auto-Start Available</h3>
               <p className="text-sm text-gray-300 mb-3">
-                The app can attempt to wait for the container to start automatically.
-                This works if you've already run <code className="bg-gray-800 px-1 rounded">docker compose up -d</code> in another terminal.
+                The app can attempt to wait for the container to start automatically. This works if
+                you&apos;ve already run{' '}
+                <code className="bg-gray-800 px-1 rounded">docker compose up -d</code> in another
+                terminal.
               </p>
               <button
                 onClick={handleAutoStart}
@@ -121,7 +129,10 @@ const DockerSetupHelper: React.FC<DockerSetupHelperProps> = ({ onClose, onRetry 
           <h3 className="text-sm font-medium text-white mb-3">📋 Manual Setup Instructions</h3>
           <div className="bg-gray-800 rounded p-4 font-mono text-xs space-y-2">
             {instructions.map((line, idx) => (
-              <div key={idx} className={line.startsWith('   ') ? 'text-emerald-400 ml-4' : 'text-gray-300'}>
+              <div
+                key={idx}
+                className={line.startsWith('   ') ? 'text-emerald-400 ml-4' : 'text-gray-300'}
+              >
                 {line}
               </div>
             ))}
@@ -148,7 +159,9 @@ const DockerSetupHelper: React.FC<DockerSetupHelperProps> = ({ onClose, onRetry 
             <h3 className="text-sm font-medium text-white mb-2">📝 Activity Log</h3>
             <div className="bg-black rounded p-3 font-mono text-xs space-y-1 max-h-40 overflow-y-auto">
               {logs.map((log, idx) => (
-                <div key={idx} className="text-gray-300">{log}</div>
+                <div key={idx} className="text-gray-300">
+                  {log}
+                </div>
               ))}
             </div>
           </div>
@@ -183,4 +196,3 @@ const DockerSetupHelper: React.FC<DockerSetupHelperProps> = ({ onClose, onRetry 
 };
 
 export default DockerSetupHelper;
-

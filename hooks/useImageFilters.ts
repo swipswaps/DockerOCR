@@ -9,7 +9,7 @@ export const useImageFilters = () => {
   const [filters, setFilters] = useState<ImageFilters>(DEFAULT_FILTERS);
 
   const updateFilter = useCallback((key: keyof ImageFilters, value: number | boolean) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   }, []);
 
   const resetFilters = useCallback(() => {
@@ -17,29 +17,29 @@ export const useImageFilters = () => {
   }, []);
 
   const rotateRight = useCallback(() => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
-      rotation: (prev.rotation + 90) % 360
+      rotation: (prev.rotation + 90) % 360,
     }));
   }, []);
 
   const rotateLeft = useCallback(() => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
-      rotation: prev.rotation - 90 < 0 ? 270 : prev.rotation - 90
+      rotation: prev.rotation - 90 < 0 ? 270 : prev.rotation - 90,
     }));
   }, []);
 
   const toggleFlipH = useCallback(() => {
-    setFilters(prev => ({ ...prev, flipH: !prev.flipH }));
+    setFilters((prev) => ({ ...prev, flipH: !prev.flipH }));
   }, []);
 
   const toggleFlipV = useCallback(() => {
-    setFilters(prev => ({ ...prev, flipV: !prev.flipV }));
+    setFilters((prev) => ({ ...prev, flipV: !prev.flipV }));
   }, []);
 
   const toggleInvert = useCallback(() => {
-    setFilters(prev => ({ ...prev, invert: !prev.invert }));
+    setFilters((prev) => ({ ...prev, invert: !prev.invert }));
   }, []);
 
   return {
@@ -54,4 +54,3 @@ export const useImageFilters = () => {
     toggleInvert,
   };
 };
-

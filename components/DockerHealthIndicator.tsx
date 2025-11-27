@@ -31,7 +31,7 @@ export const DockerHealthIndicator: React.FC<DockerHealthIndicatorProps> = ({ on
         onStatusChange?.(true);
         setShowDetails(false);
         setIsRetrying(false);
-      }
+      },
     });
 
     // Initial check
@@ -72,32 +72,34 @@ export const DockerHealthIndicator: React.FC<DockerHealthIndicatorProps> = ({ on
         <span className="status-text">Docker Unavailable</span>
         <span className="expand-icon">{showDetails ? '▼' : '▶'}</span>
       </div>
-      
+
       {showDetails && (
         <div className="status-details">
           <p className="error-message">
             {status.error || 'Cannot connect to PaddleOCR Docker container'}
           </p>
-          
+
           <div className="recovery-actions">
             <h4>🔧 Auto-Recovery Options:</h4>
-            
-            <button 
-              className="action-button retry"
-              onClick={handleRetry}
-              disabled={isRetrying}
-            >
+
+            <button className="action-button retry" onClick={handleRetry} disabled={isRetrying}>
               {isRetrying ? '🔄 Retrying...' : '🔄 Retry Connection'}
             </button>
-            
+
             <div className="fallback-info">
-              <p>🐳 <strong>PaddleOCR Requires Docker:</strong></p>
-              <p>Start Docker with: <code>docker compose up -d</code></p>
+              <p>
+                🐳 <strong>PaddleOCR Requires Docker:</strong>
+              </p>
+              <p>
+                Start Docker with: <code>docker compose up -d</code>
+              </p>
               <p>Or switch to Gemini API (requires API key) in the engine selector above.</p>
             </div>
 
             <div className="localhost-suggestion">
-              <p>💡 <strong>Using GitHub Pages?</strong></p>
+              <p>
+                💡 <strong>Using GitHub Pages?</strong>
+              </p>
               <p>For full PaddleOCR functionality with Docker:</p>
               <a
                 href="http://localhost:3000"
@@ -117,4 +119,3 @@ export const DockerHealthIndicator: React.FC<DockerHealthIndicatorProps> = ({ on
     </div>
   );
 };
-

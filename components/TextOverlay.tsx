@@ -14,21 +14,21 @@ const TextOverlay: React.FC<TextOverlayProps> = ({ imageUrl, blocks }) => {
         max-height: 70vh ensures it doesn't overflow the screen vertically too much.
         bg-gray-900 ensures we see the box even if image is transparent/loading.
       */}
-      <img 
-        src={imageUrl} 
-        alt="OCR Content" 
+      <img
+        src={imageUrl}
+        alt="OCR Content"
         className="block max-w-full h-auto object-contain select-none bg-gray-900"
         style={{ maxHeight: '70vh' }}
       />
-      
+
       {/* Overlay Container */}
       <div className="absolute inset-0 z-10">
         {blocks.map((block, idx) => {
           if (!block.bbox || block.bbox.length < 4) return null;
-          
-          const xs = block.bbox.map(p => p[0]);
-          const ys = block.bbox.map(p => p[1]);
-          
+
+          const xs = block.bbox.map((p) => p[0]);
+          const ys = block.bbox.map((p) => p[1]);
+
           const minX = Math.min(...xs);
           const maxX = Math.max(...xs);
           const minY = Math.min(...ys);
@@ -41,7 +41,7 @@ const TextOverlay: React.FC<TextOverlayProps> = ({ imageUrl, blocks }) => {
           const height = (maxY - minY) / 10;
 
           return (
-            <div 
+            <div
               key={idx}
               title={block.text}
               style={{
@@ -64,11 +64,11 @@ const TextOverlay: React.FC<TextOverlayProps> = ({ imageUrl, blocks }) => {
                  This allows the user to drag-select "natively".
                  Using vw units for responsive font sizing as a safe fallback.
               */}
-              <span 
+              <span
                 className="w-full h-full text-transparent selection:bg-emerald-500/40 selection:text-transparent"
                 style={{ fontSize: '1.2vw', lineHeight: 1 }}
               >
-                 {block.text}
+                {block.text}
               </span>
               {/* Visual Highlight Border on Hover */}
               <div className="absolute inset-0 border border-emerald-400/40 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity rounded-sm"></div>

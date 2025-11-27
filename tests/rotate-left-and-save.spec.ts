@@ -14,21 +14,21 @@ test('rotate HEIC left and save', async ({ page }) => {
   const allPageErrors: string[] = [];
 
   // Capture ALL console messages
-  page.on('console', msg => {
+  page.on('console', (msg) => {
     const text = msg.text();
     allConsoleLogs.push(text);
     console.log(`[CONSOLE] ${text}`);
   });
 
   // Capture ALL page errors
-  page.on('pageerror', err => {
+  page.on('pageerror', (err) => {
     const errMsg = `${err.name}: ${err.message}\n${err.stack}`;
     allPageErrors.push(errMsg);
     console.log(`[PAGE ERROR] ${errMsg}`);
   });
 
   // Capture request failures
-  page.on('requestfailed', request => {
+  page.on('requestfailed', (request) => {
     const failure = request.failure();
     console.log(`[REQUEST FAILED] ${request.url()}: ${failure?.errorText}`);
   });
@@ -53,8 +53,10 @@ test('rotate HEIC left and save', async ({ page }) => {
   const getLogMessages = async () => {
     return await page.evaluate(() => {
       // Find all log message spans (they have class "text-gray-200 whitespace-pre-wrap break-all")
-      const messageSpans = document.querySelectorAll('.text-gray-200.whitespace-pre-wrap.break-all');
-      return Array.from(messageSpans).map(span => span.textContent || '');
+      const messageSpans = document.querySelectorAll(
+        '.text-gray-200.whitespace-pre-wrap.break-all'
+      );
+      return Array.from(messageSpans).map((span) => span.textContent || '');
     });
   };
 
@@ -110,7 +112,9 @@ test('rotate HEIC left and save', async ({ page }) => {
     console.log('⚠️  HEIC conversion did not complete within 30 seconds\n');
     const finalLogs = await getLogMessages();
     if (finalLogs.length === 0) {
-      console.log('⚠️  No log messages found - Terminal may not be visible or logs not rendering\n');
+      console.log(
+        '⚠️  No log messages found - Terminal may not be visible or logs not rendering\n'
+      );
     }
     return;
   }
@@ -131,7 +135,9 @@ test('rotate HEIC left and save', async ({ page }) => {
       return { width: canvas.width, height: canvas.height, type: 'canvas' };
     }
     // Try both "Preview" and "Editor Preview" alt text
-    const img = document.querySelector('img[alt="Preview"], img[alt="Editor Preview"]') as HTMLImageElement;
+    const img = document.querySelector(
+      'img[alt="Preview"], img[alt="Editor Preview"]'
+    ) as HTMLImageElement;
     if (img) {
       return { width: img.naturalWidth, height: img.naturalHeight, type: 'img' };
     }
@@ -139,22 +145,24 @@ test('rotate HEIC left and save', async ({ page }) => {
   });
 
   if (originalDims) {
-    console.log(`📐 Original ${originalDims.type} dimensions: ${originalDims.width}x${originalDims.height}\n`);
+    console.log(
+      `📐 Original ${originalDims.type} dimensions: ${originalDims.width}x${originalDims.height}\n`
+    );
   } else {
     console.log('❌ Could not get dimensions!\n');
     return;
   }
-  
+
   // Find the Rotate LEFT button (270° or -90°)
   // Look for button with title containing "Rotate Left" or "270"
   const rotateLeftBtn = page.locator('button[title*="Rotate Left"], button[title*="270"]').first();
-  
+
   // Check if it exists
   const rotateLeftExists = await rotateLeftBtn.count();
-  
+
   if (rotateLeftExists === 0) {
     console.log('⚠️  Rotate Left button not found, looking for all rotate buttons...\n');
-    
+
     // Get all button titles
     const allButtons = await page.locator('button').all();
     for (const btn of allButtons) {
@@ -164,11 +172,13 @@ test('rotate HEIC left and save', async ({ page }) => {
         console.log(`   Found button: title="${title}", text="${text}"`);
       }
     }
-    
+
     // Try clicking the rotate button 3 times (90° x 3 = 270°)
-    const rotateRightBtn = page.locator('button[title*="Rotate Right"], button[title*="90"]').first();
+    const rotateRightBtn = page
+      .locator('button[title*="Rotate Right"], button[title*="90"]')
+      .first();
     const rotateRightExists = await rotateRightBtn.count();
-    
+
     if (rotateRightExists > 0) {
       console.log('\n🔄 Rotating right 3 times (90° x 3 = 270° = rotate left)\n');
       await rotateRightBtn.click();
@@ -184,41 +194,41 @@ test('rotate HEIC left and save', async ({ page }) => {
     console.log('🔄 Rotated LEFT 90° (270° clockwise)\n');
     await page.waitForTimeout(500);
   }
-  
+
   // Get rotated canvas dimensions
   const rotatedDims = await page.evaluate(() => {
     const canvas = document.querySelector('canvas') as HTMLCanvasElement;
     return canvas ? { width: canvas.width, height: canvas.height } : null;
   });
-  
+
   if (rotatedDims) {
     console.log(`📐 Rotated canvas dimensions: ${rotatedDims.width}x${rotatedDims.height}\n`);
   }
-  
+
   // Switch to Process
   await page.locator('button:has-text("Process")').click();
   await page.waitForTimeout(500);
-  
+
   // Select PaddleOCR
   const engineSelect = page.locator('select');
   await engineSelect.selectOption('PADDLE');
   await page.waitForTimeout(500);
-  
+
   // Click extraction to trigger image processing
   const extractBtn = page.locator('button:has-text("Start Extraction")');
   await extractBtn.click();
   console.log('🚀 Started extraction\n');
-  
+
   await page.waitForTimeout(5000);
-  
+
   // Get the processed image from window object
   const processedImageDataUrl = await page.evaluate(() => {
     return (window as any).__processedImageForOCR;
   });
-  
+
   if (processedImageDataUrl) {
     console.log(`✅ Found processed image data URL (${processedImageDataUrl.length} chars)\n`);
-    
+
     // Extract base64 data
     const base64Data = processedImageDataUrl.split(',')[1];
     const buffer = Buffer.from(base64Data, 'base64');
@@ -226,7 +236,7 @@ test('rotate HEIC left and save', async ({ page }) => {
     fs.writeFileSync(processedPath, buffer);
     console.log(`💾 Saved processed image: ${processedPath}`);
     console.log(`   Size: ${Math.round(buffer.length / 1024)}KB\n`);
-    
+
     // Check dimensions
     const dims = await page.evaluate((dataUrl) => {
       return new Promise((resolve) => {
@@ -235,14 +245,13 @@ test('rotate HEIC left and save', async ({ page }) => {
         img.src = dataUrl;
       });
     }, processedImageDataUrl);
-    
+
     console.log(`📐 Processed image dimensions: ${(dims as any).width}x${(dims as any).height}\n`);
   } else {
     console.log('\n❌ No processed image found in window object\n');
   }
-  
+
   console.log('\n═══════════════════════════════════════════════════');
   console.log('✅ ROTATE LEFT TEST COMPLETE');
   console.log('═══════════════════════════════════════════════════\n');
 });
-

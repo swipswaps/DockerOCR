@@ -66,12 +66,8 @@ class ErrorBoundary extends Component<Props, State> {
                 </svg>
               </div>
               <div>
-                <h2 className="text-lg font-bold text-gray-100">
-                  Something went wrong
-                </h2>
-                <p className="text-sm text-gray-400">
-                  An unexpected error occurred
-                </p>
+                <h2 className="text-lg font-bold text-gray-100">Something went wrong</h2>
+                <p className="text-sm text-gray-400">An unexpected error occurred</p>
               </div>
             </div>
 
@@ -107,4 +103,3 @@ class ErrorBoundary extends Component<Props, State> {
 }
 
 export default ErrorBoundary;
-

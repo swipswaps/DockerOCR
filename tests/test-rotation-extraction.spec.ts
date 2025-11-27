@@ -47,17 +47,19 @@ test('Test rotation and OCR extraction', async ({ page }) => {
   // Capture app messages
   const messages = await page.evaluate(() => {
     const logElements = document.querySelectorAll('.text-xs.font-mono');
-    return Array.from(logElements).map(el => el.textContent?.trim()).filter(Boolean);
+    return Array.from(logElements)
+      .map((el) => el.textContent?.trim())
+      .filter(Boolean);
   });
 
   console.log('\n📋 APP MESSAGES:');
   console.log('─────────────────────────────────────────────────');
-  messages.forEach(msg => console.log('  ', msg));
+  messages.forEach((msg) => console.log('  ', msg));
   console.log('─────────────────────────────────────────────────');
 
   // Check if rotation was applied
-  const rotationApplied = messages.some(msg => 
-    msg?.includes('rotated 270°') || msg?.includes('rotation=270')
+  const rotationApplied = messages.some(
+    (msg) => msg?.includes('rotated 270°') || msg?.includes('rotation=270')
   );
   console.log(`\n🔄 Rotation applied: ${rotationApplied ? 'YES' : 'NO'}`);
 
@@ -72,7 +74,7 @@ test('Test rotation and OCR extraction', async ({ page }) => {
     const buffer = Buffer.from(base64Data, 'base64');
     fs.writeFileSync('sent-to-ocr-rotated.jpg', buffer);
     console.log('✅ Saved sent-to-ocr-rotated.jpg');
-    
+
     // Get dimensions using sharp or just file size
     console.log(`📏 File size: ${Math.round(buffer.length / 1024)}KB`);
   } else {
@@ -83,4 +85,3 @@ test('Test rotation and OCR extraction', async ({ page }) => {
   console.log('✅ TEST COMPLETE');
   console.log('═══════════════════════════════════════════════════\n');
 });
-

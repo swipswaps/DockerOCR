@@ -41,7 +41,9 @@ export const generateProcessedImage = async (
           canvas.height = height;
         }
 
-        console.log(`[generateProcessedImage] Original: ${img.width}x${img.height}, Scaled: ${width}x${height}, Canvas: ${canvas.width}x${canvas.height}, Rotation: ${currentFilters.rotation}°`);
+        console.log(
+          `[generateProcessedImage] Original: ${img.width}x${img.height}, Scaled: ${width}x${height}, Canvas: ${canvas.width}x${canvas.height}, Rotation: ${currentFilters.rotation}°`
+        );
 
         ctx.save();
 
@@ -55,10 +57,7 @@ export const generateProcessedImage = async (
         ctx.rotate((currentFilters.rotation * Math.PI) / 180);
 
         // Apply flip transformations
-        ctx.scale(
-          currentFilters.flipH ? -1 : 1,
-          currentFilters.flipV ? -1 : 1
-        );
+        ctx.scale(currentFilters.flipH ? -1 : 1, currentFilters.flipV ? -1 : 1);
 
         // Draw image centered at origin (which is now at canvas center due to translate)
         ctx.drawImage(img, -width / 2, -height / 2, width, height);
@@ -66,7 +65,9 @@ export const generateProcessedImage = async (
         ctx.restore();
 
         const result = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
-        console.log(`[generateProcessedImage] Generated rotated image: ${result.substring(0, 50)}...`);
+        console.log(
+          `[generateProcessedImage] Generated rotated image: ${result.substring(0, 50)}...`
+        );
         console.log(`[generateProcessedImage] Result size: ${Math.round(result.length / 1024)}KB`);
 
         resolve(result);
@@ -89,11 +90,7 @@ export const generateProcessedImage = async (
 /**
  * Calculate scale factor to fit image within max dimension
  */
-export const calculateScale = (
-  width: number,
-  height: number,
-  maxDim: number
-): number => {
+export const calculateScale = (width: number, height: number, maxDim: number): number => {
   if (width <= maxDim && height <= maxDim) {
     return 1;
   }
@@ -113,10 +110,10 @@ export const buildFilterString = (filters: ImageFilters): string => {
 export const isSupportedImageType = (file: File): boolean => {
   const supportedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/heic'];
   const supportedExtensions = ['.png', '.jpg', '.jpeg', '.heic'];
-  
+
   return (
     supportedTypes.includes(file.type) ||
-    supportedExtensions.some(ext => file.name.toLowerCase().endsWith(ext))
+    supportedExtensions.some((ext) => file.name.toLowerCase().endsWith(ext))
   );
 };
 
@@ -144,4 +141,3 @@ export const getFileFormat = (file: File): string => {
   const format = file.type.split('/')[1];
   return format ? format.toUpperCase() : 'UNKNOWN';
 };
-

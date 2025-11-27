@@ -21,7 +21,9 @@ const Terminal: React.FC<TerminalProps> = ({ logs }) => {
           <div className="w-3 h-3 bg-red-500 rounded-full flex-shrink-0"></div>
           <div className="w-3 h-3 bg-yellow-500 rounded-full flex-shrink-0"></div>
           <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
-          <span className="ml-2 text-xs text-gray-400 truncate">root@docker-container:/app/ocr</span>
+          <span className="ml-2 text-xs text-gray-400 truncate">
+            root@docker-container:/app/ocr
+          </span>
         </div>
       </div>
 
@@ -35,14 +37,22 @@ const Terminal: React.FC<TerminalProps> = ({ logs }) => {
         {logs.map((log) => (
           <div key={log.id} className="flex space-x-2 max-w-full overflow-hidden">
             <span className="text-gray-500 select-none flex-shrink-0">[{log.timestamp}]</span>
-            <span className={`font-bold flex-shrink-0 ${
-              log.level === 'ERROR' ? 'text-red-400' :
-              log.level === 'SUCCESS' ? 'text-emerald-400' :
-              log.level === 'WARN' ? 'text-yellow-400' : 'text-blue-400'
-            }`}>
+            <span
+              className={`font-bold flex-shrink-0 ${
+                log.level === 'ERROR'
+                  ? 'text-red-400'
+                  : log.level === 'SUCCESS'
+                    ? 'text-emerald-400'
+                    : log.level === 'WARN'
+                      ? 'text-yellow-400'
+                      : 'text-blue-400'
+              }`}
+            >
               {log.level}
             </span>
-            <span className="text-gray-200 whitespace-pre-wrap break-words min-w-0 flex-1">{log.message}</span>
+            <span className="text-gray-200 whitespace-pre-wrap break-words min-w-0 flex-1">
+              {log.message}
+            </span>
           </div>
         ))}
         {/* Cursor */}

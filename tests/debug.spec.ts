@@ -6,12 +6,12 @@ const execAsync = promisify(exec);
 
 test('debug PaddleOCR with real HEIC file and Docker logs', async ({ page }) => {
   test.setTimeout(180000); // 3 minutes timeout
-  const errors: Array<{message: string, stack?: string}> = [];
+  const errors: Array<{ message: string; stack?: string }> = [];
   const consoleMessages: string[] = [];
   let hooksErrorDetected = false;
 
   // Capture ALL console messages
-  page.on('console', msg => {
+  page.on('console', (msg) => {
     const text = msg.text();
     const type = msg.type();
     consoleMessages.push(`[${type}] ${text}`);
@@ -19,11 +19,11 @@ test('debug PaddleOCR with real HEIC file and Docker logs', async ({ page }) => 
   });
 
   // Capture page errors
-  page.on('pageerror', error => {
+  page.on('pageerror', (error) => {
     console.error('❌ PAGE ERROR:', error.message);
     console.error('Stack:', error.stack);
     errors.push({ message: error.message, stack: error.stack });
-    
+
     if (error.message.includes('hooks') || error.message.includes('Rendered more')) {
       hooksErrorDetected = true;
       console.error('\n🚨 HOOKS ERROR DETECTED! 🚨\n');
@@ -39,26 +39,26 @@ test('debug PaddleOCR with real HEIC file and Docker logs', async ({ page }) => 
 
   console.log('\n=== Checking for error boundary ===');
   const errorBoundary = await page.locator('text=Something went wrong').count();
-  
+
   if (errorBoundary > 0) {
     console.error('❌ Error boundary is visible!');
     const errorText = await page.locator('.text-red-400').textContent();
     console.error('Error message:', errorText);
-    
+
     // Take screenshot
     await page.screenshot({ path: 'test-results/error-screenshot.png', fullPage: true });
-    
+
     // Print all console messages
     console.log('\n=== ALL CONSOLE MESSAGES ===');
-    consoleMessages.forEach(msg => console.log(msg));
-    
+    consoleMessages.forEach((msg) => console.log(msg));
+
     // Print all errors
     console.log('\n=== ALL ERRORS ===');
-    errors.forEach(err => {
+    errors.forEach((err) => {
       console.log('Message:', err.message);
       if (err.stack) console.log('Stack:', err.stack);
     });
-    
+
     throw new Error(`Hooks error detected: ${errorText}`);
   } else {
     console.log('✅ No error boundary visible');
@@ -82,7 +82,7 @@ test('debug PaddleOCR with real HEIC file and Docker logs', async ({ page }) => 
 
   // Wait for the "Converting HEIC..." spinner to appear
   const convertingSpinner = page.locator('text=Converting HEIC...');
-  const spinnerAppeared = await convertingSpinner.count() > 0;
+  const spinnerAppeared = (await convertingSpinner.count()) > 0;
   if (spinnerAppeared) {
     console.log('✅ HEIC conversion started (spinner visible)');
     // Wait for spinner to disappear (conversion complete)
@@ -94,17 +94,18 @@ test('debug PaddleOCR with real HEIC file and Docker logs', async ({ page }) => 
   }
 
   // Check console for HEIC conversion messages
-  const heicLogs = consoleMessages.filter(msg =>
-    msg.toLowerCase().includes('heic') ||
-    msg.toLowerCase().includes('converting') ||
-    msg.toLowerCase().includes('conversion')
+  const heicLogs = consoleMessages.filter(
+    (msg) =>
+      msg.toLowerCase().includes('heic') ||
+      msg.toLowerCase().includes('converting') ||
+      msg.toLowerCase().includes('conversion')
   );
   console.log(`HEIC-related logs: ${heicLogs.length}`);
-  heicLogs.forEach(log => console.log('  ', log));
+  heicLogs.forEach((log) => console.log('  ', log));
 
   // Check if preview image is visible
   const previewImage = page.locator('img[alt="Source"]');
-  const imageVisible = await previewImage.count() > 0;
+  const imageVisible = (await previewImage.count()) > 0;
   console.log(`Preview image visible: ${imageVisible}`);
 
   // Check for error after HEIC upload
@@ -116,7 +117,7 @@ test('debug PaddleOCR with real HEIC file and Docker logs', async ({ page }) => 
 
     // Print all console messages
     console.log('\n=== CONSOLE MESSAGES AT ERROR ===');
-    consoleMessages.forEach(msg => console.log(msg));
+    consoleMessages.forEach((msg) => console.log(msg));
 
     throw new Error(`Error after HEIC upload: ${errorText}`);
   }
@@ -125,7 +126,7 @@ test('debug PaddleOCR with real HEIC file and Docker logs', async ({ page }) => 
   // Step 2: Switch to Process tab
   console.log('Step 2: Switching to Process tab...');
   const processTab = page.locator('button:has-text("Process")');
-  if (await processTab.count() > 0) {
+  if ((await processTab.count()) > 0) {
     await processTab.click();
     await page.waitForTimeout(500);
   }
@@ -148,7 +149,7 @@ test('debug PaddleOCR with real HEIC file and Docker logs', async ({ page }) => 
   // Step 4: Click Start Extraction and WAIT for the full extraction to complete
   console.log('Step 4: Clicking Start Extraction...');
   const startButton = page.locator('button:has-text("Start Extraction")');
-  if (await startButton.count() > 0) {
+  if ((await startButton.count()) > 0) {
     await startButton.click();
     console.log('Start Extraction clicked, now waiting for FULL extraction process...');
 
@@ -161,7 +162,7 @@ test('debug PaddleOCR with real HEIC file and Docker logs', async ({ page }) => 
       await page.screenshot({ path: 'test-results/error-immediate.png' });
 
       console.log('\n=== ALL CONSOLE MESSAGES ===');
-      consoleMessages.forEach(msg => console.log(msg));
+      consoleMessages.forEach((msg) => console.log(msg));
 
       throw new Error(`Error immediately after click: ${errorText}`);
     }
@@ -177,7 +178,7 @@ test('debug PaddleOCR with real HEIC file and Docker logs', async ({ page }) => 
       await page.screenshot({ path: 'test-results/error-during-start.png' });
 
       console.log('\n=== ALL CONSOLE MESSAGES ===');
-      consoleMessages.forEach(msg => console.log(msg));
+      consoleMessages.forEach((msg) => console.log(msg));
 
       throw new Error(`Error during processing start: ${errorText}`);
     }
@@ -199,10 +200,10 @@ test('debug PaddleOCR with real HEIC file and Docker logs', async ({ page }) => 
         await page.screenshot({ path: `test-results/error-at-${i}s.png` });
 
         console.log('\n=== ALL CONSOLE MESSAGES ===');
-        consoleMessages.forEach(msg => console.log(msg));
+        consoleMessages.forEach((msg) => console.log(msg));
 
         console.log('\n=== ALL ERRORS ===');
-        errors.forEach(err => {
+        errors.forEach((err) => {
           console.log('Message:', err.message);
           if (err.stack) console.log('Stack:', err.stack);
         });
@@ -221,8 +222,10 @@ test('debug PaddleOCR with real HEIC file and Docker logs', async ({ page }) => 
       }
 
       // Check if extraction completed successfully
-      const successLog = consoleMessages.find(msg => msg.includes('Extraction successful'));
-      const errorLog = consoleMessages.find(msg => msg.includes('ERROR') && msg.includes('PaddleOCR'));
+      const successLog = consoleMessages.find((msg) => msg.includes('Extraction successful'));
+      const errorLog = consoleMessages.find(
+        (msg) => msg.includes('ERROR') && msg.includes('PaddleOCR')
+      );
 
       if (successLog) {
         console.log(`✅ Extraction completed successfully at ${i} seconds!`);
@@ -255,14 +258,14 @@ test('debug PaddleOCR with real HEIC file and Docker logs', async ({ page }) => 
         const recentLogs = consoleMessages.slice(-5);
         if (recentLogs.length > 0) {
           console.log('  Recent logs:');
-          recentLogs.forEach(log => console.log(`    ${log}`));
+          recentLogs.forEach((log) => console.log(`    ${log}`));
         }
       }
     }
 
     if (extractionError) {
       console.log('\n=== FINAL CONSOLE MESSAGES ===');
-      consoleMessages.forEach(msg => console.log(msg));
+      consoleMessages.forEach((msg) => console.log(msg));
 
       console.log('\n=== FINAL DOCKER LOGS ===');
       try {
@@ -279,7 +282,7 @@ test('debug PaddleOCR with real HEIC file and Docker logs', async ({ page }) => 
       console.log('⚠️  Extraction did not complete within 90 seconds');
 
       console.log('\n=== FINAL CONSOLE MESSAGES ===');
-      consoleMessages.forEach(msg => console.log(msg));
+      consoleMessages.forEach((msg) => console.log(msg));
 
       console.log('\n=== FINAL DOCKER LOGS ===');
       try {
@@ -296,4 +299,3 @@ test('debug PaddleOCR with real HEIC file and Docker logs', async ({ page }) => 
   console.log('\n✅ Test completed - checking results...');
   expect(hooksErrorDetected).toBe(false);
 });
-

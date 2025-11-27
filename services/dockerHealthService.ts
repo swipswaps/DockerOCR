@@ -1,6 +1,6 @@
 /**
  * Docker Health Monitoring Service
- * 
+ *
  * Provides self-healing Docker connectivity with automatic:
  * - Health checking
  * - Retry logic
@@ -29,10 +29,10 @@ class DockerHealthService {
     isAvailable: false,
     lastChecked: new Date(),
     retryCount: 0,
-    autoRecoveryAttempted: false
+    autoRecoveryAttempted: false,
   };
 
-  private checkInterval: NodeJS.Timeout | null = null;
+  private checkInterval: ReturnType<typeof setInterval> | null = null;
   private callbacks: DockerHealthCallback[] = [];
   private readonly CHECK_INTERVAL_MS = 10000; // Check every 10 seconds
   private readonly MAX_RETRIES = 3;
@@ -77,20 +77,20 @@ class DockerHealthService {
 
       const response = await fetch('http://localhost:5000/health', {
         method: 'GET',
-        signal: controller.signal
+        signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
 
       if (response.ok) {
         const wasUnhealthy = !this.healthStatus.isHealthy;
-        
+
         this.healthStatus = {
           isHealthy: true,
           isAvailable: true,
           lastChecked: new Date(),
           retryCount: 0,
-          autoRecoveryAttempted: false
+          autoRecoveryAttempted: false,
         };
 
         // Notify recovery if it was previously unhealthy
@@ -119,12 +119,17 @@ class DockerHealthService {
     this.healthStatus.error = error.message || 'Docker connection failed';
 
     // Attempt auto-recovery if not already attempted
-    if (!this.healthStatus.autoRecoveryAttempted && this.healthStatus.retryCount <= this.MAX_RETRIES) {
-      console.log(`🔄 Docker health check failed (attempt ${this.healthStatus.retryCount}/${this.MAX_RETRIES}). Retrying...`);
-      
+    if (
+      !this.healthStatus.autoRecoveryAttempted &&
+      this.healthStatus.retryCount <= this.MAX_RETRIES
+    ) {
+      console.log(
+        `🔄 Docker health check failed (attempt ${this.healthStatus.retryCount}/${this.MAX_RETRIES}). Retrying...`
+      );
+
       // Wait before retry
-      await new Promise(resolve => setTimeout(resolve, this.RETRY_DELAY_MS));
-      
+      await new Promise((resolve) => setTimeout(resolve, this.RETRY_DELAY_MS));
+
       // Retry
       return this.checkHealth();
     }
@@ -158,19 +163,18 @@ class DockerHealthService {
 
   // Notification methods
   private notifyHealthy(): void {
-    this.callbacks.forEach(cb => cb.onHealthy?.());
+    this.callbacks.forEach((cb) => cb.onHealthy?.());
   }
 
   private notifyUnhealthy(): void {
-    this.callbacks.forEach(cb => cb.onUnhealthy?.(this.healthStatus));
+    this.callbacks.forEach((cb) => cb.onUnhealthy?.(this.healthStatus));
   }
 
   private notifyRecovered(): void {
     console.log('✅ Docker connection recovered!');
-    this.callbacks.forEach(cb => cb.onRecovered?.());
+    this.callbacks.forEach((cb) => cb.onRecovered?.());
   }
 }
 
 // Singleton instance
 export const dockerHealthService = new DockerHealthService();
-

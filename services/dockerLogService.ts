@@ -21,7 +21,7 @@ export const fetchDockerLogs = async (): Promise<DockerLog[]> => {
   try {
     const response = await fetch('http://localhost:5000/logs', {
       method: 'GET',
-      signal: AbortSignal.timeout(3000)
+      signal: AbortSignal.timeout(3000),
     });
 
     if (!response.ok) {
@@ -49,7 +49,7 @@ export const pollDockerLogs = (
 
   const poll = async () => {
     const logs = await fetchDockerLogs();
-    
+
     // Only call callback if we have new logs
     if (logs.length > lastLogCount) {
       const newLogs = logs.slice(lastLogCount);
@@ -75,7 +75,7 @@ export const pollDockerLogs = (
  */
 export const getLogsSince = async (since: string): Promise<DockerLog[]> => {
   const allLogs = await fetchDockerLogs();
-  return allLogs.filter(log => log.timestamp > since);
+  return allLogs.filter((log) => log.timestamp > since);
 };
 
 /**
@@ -116,30 +116,36 @@ const getLogEmoji = (level: string, message: string): string => {
  * Check if a log entry indicates an error
  */
 export const isErrorLog = (log: DockerLog): boolean => {
-  return log.level.toUpperCase() === 'ERROR' || 
-         log.message.toLowerCase().includes('error') ||
-         log.message.toLowerCase().includes('failed');
+  return (
+    log.level.toUpperCase() === 'ERROR' ||
+    log.message.toLowerCase().includes('error') ||
+    log.message.toLowerCase().includes('failed')
+  );
 };
 
 /**
  * Check if a log entry indicates success
  */
 export const isSuccessLog = (log: DockerLog): boolean => {
-  return log.message.includes('✅') || 
-         log.message.toLowerCase().includes('success') ||
-         log.message.toLowerCase().includes('complete');
+  return (
+    log.message.includes('✅') ||
+    log.message.toLowerCase().includes('success') ||
+    log.message.toLowerCase().includes('complete')
+  );
 };
 
 /**
  * Extract progress information from logs
  */
-export const extractProgress = (logs: DockerLog[]): {
+export const extractProgress = (
+  logs: DockerLog[]
+): {
   stage: string;
   percentage: number;
 } | null => {
   // Look for specific progress indicators
   const recentLogs = logs.slice(-10);
-  
+
   for (const log of recentLogs.reverse()) {
     if (log.message.includes('Loading PP-OCRv4')) {
       return { stage: 'Loading detection model', percentage: 25 };
@@ -154,7 +160,6 @@ export const extractProgress = (logs: DockerLog[]): {
       return { stage: 'Complete', percentage: 100 };
     }
   }
-  
+
   return null;
 };
-

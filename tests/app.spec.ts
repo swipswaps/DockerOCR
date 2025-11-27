@@ -6,14 +6,14 @@ test.describe('DockerOCR Dashboard', () => {
     const consoleMessages: string[] = [];
 
     // Capture console messages
-    page.on('console', msg => {
+    page.on('console', (msg) => {
       const text = msg.text();
       consoleMessages.push(`[${msg.type()}] ${text}`);
       console.log(`Browser console [${msg.type()}]:`, text);
     });
 
     // Capture page errors
-    page.on('pageerror', error => {
+    page.on('pageerror', (error) => {
       errors.push(error.message);
       console.error('Page error:', error.message);
     });
@@ -26,19 +26,19 @@ test.describe('DockerOCR Dashboard', () => {
 
     // Check if error boundary is shown
     const errorBoundary = await page.locator('text=Something went wrong').count();
-    
+
     if (errorBoundary > 0) {
       const errorMessage = await page.locator('.text-red-400').textContent();
       console.error('Error Boundary shown with message:', errorMessage);
-      
+
       // Print all console messages
       console.log('\n=== All Console Messages ===');
-      consoleMessages.forEach(msg => console.log(msg));
-      
+      consoleMessages.forEach((msg) => console.log(msg));
+
       // Print all errors
       console.log('\n=== All Errors ===');
-      errors.forEach(err => console.log(err));
-      
+      errors.forEach((err) => console.log(err));
+
       throw new Error(`App failed to load: ${errorMessage}`);
     }
 
@@ -50,9 +50,9 @@ test.describe('DockerOCR Dashboard', () => {
     console.log(`Total errors: ${errors.length}`);
 
     // Print render count
-    const renderLogs = consoleMessages.filter(msg => msg.includes('[App] Render'));
+    const renderLogs = consoleMessages.filter((msg) => msg.includes('[App] Render'));
     console.log(`\nRender count: ${renderLogs.length}`);
-    renderLogs.forEach(log => console.log(log));
+    renderLogs.forEach((log) => console.log(log));
   });
 
   test('should handle state changes without hooks errors', async ({ page }) => {
@@ -61,7 +61,7 @@ test.describe('DockerOCR Dashboard', () => {
     const renderCounts: number[] = [];
 
     // Capture console messages
-    page.on('console', msg => {
+    page.on('console', (msg) => {
       const text = msg.text();
       consoleMessages.push(`[${msg.type()}] ${text}`);
       console.log(`Browser console [${msg.type()}]:`, text);
@@ -73,7 +73,7 @@ test.describe('DockerOCR Dashboard', () => {
     });
 
     // Capture page errors
-    page.on('pageerror', error => {
+    page.on('pageerror', (error) => {
       errors.push(error.message);
       console.error('❌ Page error:', error.message);
       console.error('Stack:', error.stack);
@@ -101,7 +101,7 @@ test.describe('DockerOCR Dashboard', () => {
 
     // Close help modal
     const closeButton = page.locator('button:has-text("Close")');
-    if (await closeButton.count() > 0) {
+    if ((await closeButton.count()) > 0) {
       await closeButton.click();
       await page.waitForTimeout(500);
     }
@@ -120,14 +120,16 @@ test.describe('DockerOCR Dashboard', () => {
 
       // Print all console messages
       console.log('\n=== All Console Messages ===');
-      consoleMessages.forEach(msg => console.log(msg));
+      consoleMessages.forEach((msg) => console.log(msg));
 
       // Print all errors
       console.log('\n=== All Errors ===');
-      errors.forEach(err => console.log(err));
+      errors.forEach((err) => console.log(err));
 
       // Check for hooks error
-      const hasHooksError = errors.some(err => err.includes('hooks') || err.includes('Rendered more'));
+      const hasHooksError = errors.some(
+        (err) => err.includes('hooks') || err.includes('Rendered more')
+      );
       if (hasHooksError) {
         console.error('\n❌ HOOKS ERROR DETECTED!');
       }
@@ -144,10 +146,9 @@ test.describe('DockerOCR Dashboard', () => {
     if (renderCounts.length > 2) {
       console.log('\n=== Render Pattern Analysis ===');
       for (let i = 1; i < renderCounts.length; i++) {
-        const timeDiff = renderCounts[i] - renderCounts[i-1];
-        console.log(`Render ${i} -> ${i+1}: ${timeDiff}ms`);
+        const timeDiff = renderCounts[i] - renderCounts[i - 1];
+        console.log(`Render ${i} -> ${i + 1}: ${timeDiff}ms`);
       }
     }
   });
 });
-

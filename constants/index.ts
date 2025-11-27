@@ -21,12 +21,12 @@ export const DEFAULT_FILTERS: ImageFilters = {
 
 export const DEFAULT_VIEW_STATE = {
   zoom: 1,
-  offset: { x: 0, y: 0 }
+  offset: { x: 0, y: 0 },
 };
 
 // Image constraints
 export const MAX_IMAGE_DIMENSION = 1500;
-export const IMAGE_QUALITY = 0.70;
+export const IMAGE_QUALITY = 0.7;
 export const CROP_IMAGE_QUALITY = 0.85;
 
 // Zoom limits
@@ -47,12 +47,7 @@ export const SUPPORTED_IMAGE_TYPES = [
   'image/heic',
 ] as const;
 
-export const SUPPORTED_FILE_EXTENSIONS = [
-  '.png',
-  '.jpg',
-  '.jpeg',
-  '.heic',
-] as const;
+export const SUPPORTED_FILE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.heic'] as const;
 
 // OCR Models
 export const GEMINI_MODEL = 'gemini-2.5-flash';
@@ -69,4 +64,3 @@ export const MESSAGES = {
   PROCESSING_ERROR: 'An error occurred during processing',
   NETWORK_ERROR: 'Network error. Please check your connection.',
 } as const;
-

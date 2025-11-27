@@ -1,6 +1,16 @@
 import React from 'react';
 import { ImageFilters } from '../types';
-import { IconAdjustments, IconRefresh, IconRotate, IconFlipH, IconFlipV, IconInvert, IconZoomIn, IconZoomOut, IconCrop } from './Icons';
+import {
+  IconAdjustments,
+  IconRefresh,
+  IconRotate,
+  IconFlipH,
+  IconFlipV,
+  IconInvert,
+  IconZoomIn,
+  IconZoomOut,
+  IconCrop,
+} from './Icons';
 
 interface ImageControlsProps {
   filters: ImageFilters;
@@ -23,21 +33,21 @@ const ImageControls: React.FC<ImageControlsProps> = ({
   onCrop,
   autoRotateEnabled = true,
   onAutoRotateChange,
-  onManualRotationDetect
+  onManualRotationDetect,
 }) => {
   const handleChange = (key: keyof ImageFilters, value: number | boolean) => {
     onChange({ ...filters, [key]: value });
   };
 
   const handleReset = () => {
-    onChange({ 
-      contrast: 100, 
-      brightness: 100, 
+    onChange({
+      contrast: 100,
+      brightness: 100,
       grayscale: 0,
       rotation: 0,
       flipH: false,
       flipV: false,
-      invert: false
+      invert: false,
     });
   };
 
@@ -49,7 +59,7 @@ const ImageControls: React.FC<ImageControlsProps> = ({
     const newRotation = (filters.rotation + 90) % 360;
     handleChange('rotation', newRotation);
   };
-  
+
   const rotateLeft = () => {
     let newRotation = filters.rotation - 90;
     if (newRotation < 0) newRotation = 270;
@@ -63,7 +73,7 @@ const ImageControls: React.FC<ImageControlsProps> = ({
           <IconAdjustments />
           <span className="text-xs font-bold uppercase tracking-widest">Image Tools</span>
         </div>
-        <button 
+        <button
           onClick={handleReset}
           disabled={disabled}
           className="p-1.5 text-gray-500 hover:text-emerald-400 hover:bg-gray-800 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -76,19 +86,46 @@ const ImageControls: React.FC<ImageControlsProps> = ({
       {/* Transforms Toolbar */}
       <div className="space-y-2">
         <div className="grid grid-cols-5 gap-2">
-          <button onClick={rotateLeft} disabled={disabled} className="tool-btn group" title="Rotate Left (90°) - Applied before OCR">
-            <div className="transform -scale-x-100"><IconRotate /></div>
+          <button
+            onClick={rotateLeft}
+            disabled={disabled}
+            className="tool-btn group"
+            title="Rotate Left (90°) - Applied before OCR"
+          >
+            <div className="transform -scale-x-100">
+              <IconRotate />
+            </div>
           </button>
-          <button onClick={rotateRight} disabled={disabled} className="tool-btn" title="Rotate Right (90°) - Applied before OCR">
+          <button
+            onClick={rotateRight}
+            disabled={disabled}
+            className="tool-btn"
+            title="Rotate Right (90°) - Applied before OCR"
+          >
             <IconRotate />
           </button>
-          <button onClick={() => toggleBoolean('flipH')} disabled={disabled} className={`tool-btn ${filters.flipH ? 'bg-emerald-900/50 text-emerald-400 border-emerald-700' : ''}`} title="Flip Horizontal">
+          <button
+            onClick={() => toggleBoolean('flipH')}
+            disabled={disabled}
+            className={`tool-btn ${filters.flipH ? 'bg-emerald-900/50 text-emerald-400 border-emerald-700' : ''}`}
+            title="Flip Horizontal"
+          >
             <IconFlipH />
           </button>
-          <button onClick={() => toggleBoolean('flipV')} disabled={disabled} className={`tool-btn ${filters.flipV ? 'bg-emerald-900/50 text-emerald-400 border-emerald-700' : ''}`} title="Flip Vertical">
+          <button
+            onClick={() => toggleBoolean('flipV')}
+            disabled={disabled}
+            className={`tool-btn ${filters.flipV ? 'bg-emerald-900/50 text-emerald-400 border-emerald-700' : ''}`}
+            title="Flip Vertical"
+          >
             <IconFlipV />
           </button>
-          <button onClick={() => toggleBoolean('invert')} disabled={disabled} className={`tool-btn ${filters.invert ? 'bg-emerald-900/50 text-emerald-400 border-emerald-700' : ''}`} title="Invert Colors">
+          <button
+            onClick={() => toggleBoolean('invert')}
+            disabled={disabled}
+            className={`tool-btn ${filters.invert ? 'bg-emerald-900/50 text-emerald-400 border-emerald-700' : ''}`}
+            title="Invert Colors"
+          >
             <IconInvert />
           </button>
         </div>
@@ -112,7 +149,11 @@ const ImageControls: React.FC<ImageControlsProps> = ({
                 className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
                   autoRotateEnabled ? 'bg-emerald-600' : 'bg-gray-600'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
-                title={autoRotateEnabled ? 'Auto-rotation enabled - Tesseract.js will detect text orientation' : 'Auto-rotation disabled - use manual controls only'}
+                title={
+                  autoRotateEnabled
+                    ? 'Auto-rotation enabled - Tesseract.js will detect text orientation'
+                    : 'Auto-rotation disabled - use manual controls only'
+                }
               >
                 <span
                   className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
@@ -194,19 +235,31 @@ const ImageControls: React.FC<ImageControlsProps> = ({
       {/* View & Crop Section */}
       {onZoomIn && onCrop && (
         <div className="pt-4 border-t border-gray-800/50 flex space-x-2">
-           <div className="flex-1 bg-gray-800 rounded-lg flex items-center p-1">
-             <button onClick={onZoomOut} disabled={disabled} className="flex-1 flex justify-center p-1 text-gray-400 hover:text-emerald-400 disabled:opacity-50"><IconZoomOut /></button>
-             <div className="w-px h-4 bg-gray-700"></div>
-             <button onClick={onZoomIn} disabled={disabled} className="flex-1 flex justify-center p-1 text-gray-400 hover:text-emerald-400 disabled:opacity-50"><IconZoomIn /></button>
-           </div>
-           <button 
-             onClick={onCrop} 
-             disabled={disabled}
-             className="flex-1 bg-emerald-900/20 border border-emerald-900/50 text-emerald-400 rounded-lg flex items-center justify-center space-x-1 text-xs font-bold uppercase tracking-wide hover:bg-emerald-900/40 transition-colors disabled:opacity-50"
-           >
-             <IconCrop />
-             <span>Crop to View</span>
-           </button>
+          <div className="flex-1 bg-gray-800 rounded-lg flex items-center p-1">
+            <button
+              onClick={onZoomOut}
+              disabled={disabled}
+              className="flex-1 flex justify-center p-1 text-gray-400 hover:text-emerald-400 disabled:opacity-50"
+            >
+              <IconZoomOut />
+            </button>
+            <div className="w-px h-4 bg-gray-700"></div>
+            <button
+              onClick={onZoomIn}
+              disabled={disabled}
+              className="flex-1 flex justify-center p-1 text-gray-400 hover:text-emerald-400 disabled:opacity-50"
+            >
+              <IconZoomIn />
+            </button>
+          </div>
+          <button
+            onClick={onCrop}
+            disabled={disabled}
+            className="flex-1 bg-emerald-900/20 border border-emerald-900/50 text-emerald-400 rounded-lg flex items-center justify-center space-x-1 text-xs font-bold uppercase tracking-wide hover:bg-emerald-900/40 transition-colors disabled:opacity-50"
+          >
+            <IconCrop />
+            <span>Crop to View</span>
+          </button>
         </div>
       )}
 

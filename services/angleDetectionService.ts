@@ -28,12 +28,15 @@ export async function detectRotationAngle(
         if (m.status === 'recognizing text' || m.status === 'loading tesseract core') {
           const currentProgress = Math.round(m.progress * 100);
           // Only log if progress changed by at least 10% to reduce spam
-          if (currentProgress !== lastProgress && (currentProgress - lastProgress >= 10 || currentProgress === 100)) {
+          if (
+            currentProgress !== lastProgress &&
+            (currentProgress - lastProgress >= 10 || currentProgress === 100)
+          ) {
             lastProgress = currentProgress;
             onProgress?.(currentProgress, `Detecting orientation: ${currentProgress}%`);
           }
         }
-      }
+      },
     });
 
     // Tesseract.js cannot properly detect rotation (OSD mode returns empty, AUTO mode auto-corrects)
@@ -47,8 +50,8 @@ export async function detectRotationAngle(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          image: imageData
-        })
+          image: imageData,
+        }),
       });
 
       if (!response.ok) {
@@ -57,14 +60,20 @@ export async function detectRotationAngle(
 
       const result = await response.json();
 
-      onProgress?.(70, `DEBUG: Tesseract OSD result: orientation=${result.orientation}°, rotate=${result.rotate}°, confidence=${result.confidence}`);
+      onProgress?.(
+        70,
+        `DEBUG: Tesseract OSD result: orientation=${result.orientation}°, rotate=${result.rotate}°, confidence=${result.confidence}`
+      );
 
       if (result.success && result.orientation !== undefined) {
         const orientation = result.orientation;
         // Tesseract OSD confidence is on 0-15 scale, normalize to 0-1
         const confidence = Math.min(result.confidence / 15, 1.0);
 
-        onProgress?.(80, `✅ Tesseract OSD detected: ${orientation}° rotation (confidence: ${result.confidence.toFixed(1)}/15 = ${(confidence * 100).toFixed(0)}%)`);
+        onProgress?.(
+          80,
+          `✅ Tesseract OSD detected: ${orientation}° rotation (confidence: ${result.confidence.toFixed(1)}/15 = ${(confidence * 100).toFixed(0)}%)`
+        );
 
         // Tesseract reports current orientation, we need to apply correction
         // "Orientation in degrees: 90" means image is rotated 90° clockwise
@@ -78,19 +87,21 @@ export async function detectRotationAngle(
           correctionAngle = 90;
         }
 
-        onProgress?.(100, `Applying ${correctionAngle}° rotation to correct ${orientation}° orientation`);
+        onProgress?.(
+          100,
+          `Applying ${correctionAngle}° rotation to correct ${orientation}° orientation`
+        );
 
         await worker.terminate();
 
         return {
           angle: correctionAngle,
           confidence: confidence,
-          method: 'tesseract'
+          method: 'tesseract',
         };
       }
 
       throw new Error('No orientation data in server response');
-
     } catch (serverError) {
       // Server not available or failed - fall back to assuming no rotation
       onProgress?.(60, `WARN: Tesseract OSD unavailable: ${serverError}`);
@@ -105,7 +116,7 @@ export async function detectRotationAngle(
       return {
         angle: 0,
         confidence: 0.3,
-        method: 'dimension-heuristic'
+        method: 'dimension-heuristic',
       };
     }
   } catch (error) {
@@ -121,7 +132,7 @@ export async function detectRotationAngle(
     return {
       angle: 0,
       confidence: 0,
-      method: 'manual'
+      method: 'manual',
     };
   }
 }
@@ -129,17 +140,14 @@ export async function detectRotationAngle(
 /**
  * Apply rotation to an image and return the rotated base64 data
  */
-export async function rotateImage(
-  imageData: string,
-  angle: number
-): Promise<string> {
+export async function rotateImage(imageData: string, angle: number): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    
+
     img.onload = () => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      
+
       if (!ctx) {
         reject(new Error('Failed to get canvas context'));
         return;
@@ -149,10 +157,10 @@ export async function rotateImage(
       const radians = (angle * Math.PI) / 180;
       const sin = Math.abs(Math.sin(radians));
       const cos = Math.abs(Math.cos(radians));
-      
+
       const newWidth = img.width * cos + img.height * sin;
       const newHeight = img.width * sin + img.height * cos;
-      
+
       canvas.width = newWidth;
       canvas.height = newHeight;
 
@@ -172,4 +180,3 @@ export async function rotateImage(
     img.src = imageData;
   });
 }
-

@@ -9,14 +9,14 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="help-modal-title"
     >
-      <div 
+      <div
         className="bg-gray-900 rounded-xl border border-gray-800 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
@@ -30,7 +30,12 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             aria-label="Close help modal"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -93,7 +98,10 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
   );
 };
 
-const ShortcutItem: React.FC<{ shortcut: string; description: string }> = ({ shortcut, description }) => (
+const ShortcutItem: React.FC<{ shortcut: string; description: string }> = ({
+  shortcut,
+  description,
+}) => (
   <div className="flex items-center justify-between text-sm">
     <span className="text-gray-300">{description}</span>
     <kbd className="px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs font-mono text-emerald-400">
@@ -103,4 +111,3 @@ const ShortcutItem: React.FC<{ shortcut: string; description: string }> = ({ sho
 );
 
 export default HelpModal;
-

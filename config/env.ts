@@ -35,10 +35,7 @@ export const hasApiKey = (): boolean => {
 export const requireApiKey = (): string => {
   const config = getEnvConfig();
   if (!config.apiKey) {
-    throw new Error(
-      'API key not configured. Please set GEMINI_API_KEY in your .env.local file.'
-    );
+    throw new Error('API key not configured. Please set GEMINI_API_KEY in your .env.local file.');
   }
   return config.apiKey;
 };
-

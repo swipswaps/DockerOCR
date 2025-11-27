@@ -21,7 +21,7 @@ export const checkDockerInstalled = async (): Promise<boolean> => {
     // Try to reach Docker health endpoint through our backend
     const response = await fetch('http://localhost:5000/health', {
       method: 'GET',
-      signal: AbortSignal.timeout(2000)
+      signal: AbortSignal.timeout(2000),
     });
     return response.ok;
   } catch {
@@ -40,14 +40,14 @@ export const checkContainerHealth = async (): Promise<DockerStatus> => {
     containerRunning: false,
     containerHealthy: false,
     canAutoFix: false,
-    message: ''
+    message: '',
   };
 
   try {
     // First check if health endpoint is reachable (Flask server running)
     const healthResponse = await fetch('http://localhost:5000/health', {
       method: 'GET',
-      signal: AbortSignal.timeout(3000)
+      signal: AbortSignal.timeout(3000),
     });
 
     if (healthResponse.ok) {
@@ -62,7 +62,7 @@ export const checkContainerHealth = async (): Promise<DockerStatus> => {
         try {
           const readyResponse = await fetch('http://localhost:5000/ready', {
             method: 'GET',
-            signal: AbortSignal.timeout(3000)
+            signal: AbortSignal.timeout(3000),
           });
 
           if (readyResponse.ok) {
@@ -96,7 +96,7 @@ export const checkContainerHealth = async (): Promise<DockerStatus> => {
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
+
     // Network error means container is not running
     if (errorMessage.includes('fetch') || errorMessage.includes('Failed to fetch')) {
       status.message = '⚠️ PaddleOCR container not reachable on port 5000';
@@ -137,7 +137,7 @@ export const getSetupInstructions = (): { platform: string; instructions: string
       'If Docker is not installed:',
       '• Download Docker Desktop from docker.com',
       '• Install and restart your computer',
-      '• Enable WSL2 backend in Docker Desktop settings'
+      '• Enable WSL2 backend in Docker Desktop settings',
     ];
   } else if (isMac) {
     platform = 'macOS';
@@ -153,7 +153,7 @@ export const getSetupInstructions = (): { platform: string; instructions: string
       'If Docker is not installed:',
       '• Download Docker Desktop from docker.com',
       '• Install and start Docker Desktop',
-      '• Wait for Docker to fully start (whale icon in menu bar)'
+      '• Wait for Docker to fully start (whale icon in menu bar)',
     ];
   } else if (isLinux) {
     platform = 'Linux';
@@ -170,7 +170,7 @@ export const getSetupInstructions = (): { platform: string; instructions: string
       '• Install Docker: sudo apt-get install docker.io docker-compose',
       '• Add user to docker group: sudo usermod -aG docker $USER',
       '• Log out and log back in',
-      '• Start Docker: sudo systemctl start docker'
+      '• Start Docker: sudo systemctl start docker',
     ];
   }
 
@@ -182,24 +182,23 @@ export const getSetupInstructions = (): { platform: string; instructions: string
  */
 export const attemptAutoStart = async (onLog: (msg: string) => void): Promise<boolean> => {
   onLog('🔧 Attempting to auto-start PaddleOCR container...');
-  
+
   // Check if container is already starting
   for (let i = 0; i < 12; i++) {
     onLog(`⏳ Checking container status (attempt ${i + 1}/12)...`);
-    
+
     const status = await checkContainerHealth();
-    
+
     if (status.containerHealthy) {
       onLog('✅ Container is now healthy!');
       return true;
     }
-    
+
     // Wait 5 seconds between checks
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    await new Promise((resolve) => setTimeout(resolve, 5000));
   }
-  
+
   onLog('❌ Container did not start automatically');
   onLog('📋 Please start the container manually (see instructions below)');
   return false;
 };
-

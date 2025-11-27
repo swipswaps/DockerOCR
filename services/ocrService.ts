@@ -1,9 +1,9 @@
-import { GoogleGenAI, Type } from "@google/genai";
-import { OCREngine, OCRResult } from "../types";
-import { requireApiKey } from "../config/env";
-import { GEMINI_MODEL } from "../constants";
-import { checkContainerHealth } from "./dockerService";
-import { pollDockerLogs, formatDockerLog } from "./dockerLogService";
+import { GoogleGenAI, Type } from '@google/genai';
+import { OCREngine, OCRResult } from '../types';
+import { requireApiKey } from '../config/env';
+import { GEMINI_MODEL } from '../constants';
+import { checkContainerHealth } from './dockerService';
+import { pollDockerLogs, formatDockerLog } from './dockerLogService';
 
 // Initialize Gemini with validated API key
 const getAI = () => {
@@ -45,14 +45,18 @@ const performGeminiExtraction = async (
 
   const generateRequest = async (useSchema: boolean) => {
     const config: any = {
-      responseMimeType: "application/json",
+      responseMimeType: 'application/json',
     };
 
     if (useSchema) {
       config.responseSchema = {
         type: Type.OBJECT,
         properties: {
-          text: { type: Type.STRING, description: "Full text extracted from the image, preserving original newlines and layout." },
+          text: {
+            type: Type.STRING,
+            description:
+              'Full text extracted from the image, preserving original newlines and layout.',
+          },
           blocks: {
             type: Type.ARRAY,
             items: {
@@ -64,27 +68,24 @@ const performGeminiExtraction = async (
                   type: Type.ARRAY,
                   items: {
                     type: Type.ARRAY,
-                    items: { type: Type.NUMBER }
-                  }
-                }
+                    items: { type: Type.NUMBER },
+                  },
+                },
               },
-              required: ["text", "confidence", "bbox"]
-            }
-          }
+              required: ['text', 'confidence', 'bbox'],
+            },
+          },
         },
-        required: ["text", "blocks"]
+        required: ['text', 'blocks'],
       };
     }
 
     return ai.models.generateContent({
       model: model,
       contents: {
-        parts: [
-          { inlineData: { mimeType: mimeType, data: cleanBase64 } },
-          { text: prompt }
-        ]
+        parts: [{ inlineData: { mimeType: mimeType, data: cleanBase64 } }, { text: prompt }],
       },
-      config: config
+      config: config,
     });
   };
 
@@ -93,22 +94,21 @@ const performGeminiExtraction = async (
     const response = await generateRequest(true);
 
     onLog(`Inference complete. Parsing response vector...`);
-    
+
     const text = response.text;
-    if (!text) throw new Error("No text returned from model");
+    if (!text) throw new Error('No text returned from model');
 
     const parsed = JSON.parse(text);
-    
+
     const result: OCRResult = {
       file: file.name,
       text: parsed.text,
-      blocks: parsed.blocks || []
+      blocks: parsed.blocks || [],
     };
-    
-    onLog(`Normalization complete. ${result.blocks.length} blocks identified.`);
-    
-    return result;
 
+    onLog(`Normalization complete. ${result.blocks.length} blocks identified.`);
+
+    return result;
   } catch (error) {
     console.error(error);
 
@@ -116,13 +116,18 @@ const performGeminiExtraction = async (
     const errorStatus = (error as any)?.status;
 
     // Check for 500 Internal Error or similar API failures
-    if (errorMessage.includes('500') || errorStatus === 500 || errorMessage.includes('Internal') || errorMessage.includes('Json')) {
+    if (
+      errorMessage.includes('500') ||
+      errorStatus === 500 ||
+      errorMessage.includes('Internal') ||
+      errorMessage.includes('Json')
+    ) {
       onLog('WARN: Strict schema failed (API 500/Internal). Retrying with loose JSON mode...');
 
       try {
         const response = await generateRequest(false);
         const text = response.text;
-        if (!text) throw new Error("No text returned from fallback");
+        if (!text) throw new Error('No text returned from fallback');
 
         // Clean markdown formatting if present (e.g. ```json ... ```)
         const cleanText = text.replace(/```json\n?|```/g, '').trim();
@@ -130,16 +135,17 @@ const performGeminiExtraction = async (
 
         return {
           file: file.name,
-          text: parsed.text || "",
-          blocks: parsed.blocks || []
+          text: parsed.text || '',
+          blocks: parsed.blocks || [],
         };
       } catch (fallbackError) {
-        const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : 'Unknown error';
+        const fallbackMessage =
+          fallbackError instanceof Error ? fallbackError.message : 'Unknown error';
         throw new Error(`Fallback failed: ${fallbackMessage}`);
       }
     }
 
-    throw new Error(errorMessage || "Gemini extraction failed");
+    throw new Error(errorMessage || 'Gemini extraction failed');
   }
 };
 
@@ -161,11 +167,11 @@ const performPaddleExtraction = async (
       onLog('🔧 PaddleOCR is initializing. Waiting up to 30 seconds...');
 
       // Wait with retries (check every 5 seconds for up to 30 seconds)
-      let retries = 6;
+      const retries = 6;
       let ready = false;
 
       for (let i = 0; i < retries; i++) {
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        await new Promise((resolve) => setTimeout(resolve, 5000));
         onLog(`⏳ Checking readiness... (${(i + 1) * 5}s / 30s)`);
 
         const retryStatus = await checkContainerHealth();
@@ -207,7 +213,7 @@ const performPaddleExtraction = async (
 
   // Start polling Docker logs for real-time progress
   const stopPolling = pollDockerLogs((newLogs) => {
-    newLogs.forEach(log => {
+    newLogs.forEach((log) => {
       // Show ALL Docker logs verbatim
       const formattedLog = formatDockerLog(log);
       onLog(formattedLog);
@@ -223,9 +229,9 @@ const performPaddleExtraction = async (
       },
       body: JSON.stringify({
         image: cleanBase64,
-        filename: file.name
+        filename: file.name,
       }),
-      signal: AbortSignal.timeout(60000) // 60 second timeout
+      signal: AbortSignal.timeout(60000), // 60 second timeout
     });
 
     // Stop polling after request completes
@@ -257,7 +263,9 @@ const performPaddleExtraction = async (
           // Stop polling
           stopPolling();
 
-          throw new Error('PaddleOCR is not ready yet. Please wait 10-30 seconds after container start and try again.');
+          throw new Error(
+            'PaddleOCR is not ready yet. Please wait 10-30 seconds after container start and try again.'
+          );
         }
 
         if (errorData.error_type) {
@@ -304,12 +312,11 @@ const performPaddleExtraction = async (
     const ocrResult: OCRResult = {
       file: file.name,
       text: result.text || '',
-      blocks: result.blocks || []
+      blocks: result.blocks || [],
     };
 
     onLog(`✅ PaddleOCR extraction successful. ${ocrResult.blocks.length} blocks detected.`);
     return ocrResult;
-
   } catch (error) {
     // Make sure to stop polling on error
     stopPolling();
@@ -322,7 +329,11 @@ const performPaddleExtraction = async (
     }
 
     // Check if it's a network/connection error
-    if (errorMessage.includes('fetch') || errorMessage.includes('NetworkError') || errorMessage.includes('Failed to fetch')) {
+    if (
+      errorMessage.includes('fetch') ||
+      errorMessage.includes('NetworkError') ||
+      errorMessage.includes('Failed to fetch')
+    ) {
       onLog('⚠️ WARN: PaddleOCR Docker container not reachable');
 
       // Trigger Docker setup helper
@@ -341,7 +352,9 @@ const performPaddleExtraction = async (
         onLog('✅ Fallback extraction successful using Gemini.');
         return geminiResult;
       } catch (geminiError) {
-        throw new Error('Both PaddleOCR and Gemini fallback failed. Please check Docker container and API key.');
+        throw new Error(
+          'Both PaddleOCR and Gemini fallback failed. Please check Docker container and API key.'
+        );
       }
     }
 

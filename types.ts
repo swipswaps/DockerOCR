@@ -34,5 +34,5 @@ export enum ExtractionStatus {
   UPLOADING = 'UPLOADING',
   PROCESSING = 'PROCESSING', // Docker container running
   COMPLETE = 'COMPLETE',
-  ERROR = 'ERROR'
+  ERROR = 'ERROR',
 }

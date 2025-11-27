@@ -1,0 +1,9 @@
+dist
+node_modules
+serve_local
+github_pages_copy
+test-results
+playwright-report
+*.min.js
+package-lock.json
+
