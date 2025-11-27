@@ -13,13 +13,26 @@ import DockerSetupHelper from './components/DockerSetupHelper';
 import { DockerHealthIndicator } from './components/DockerHealthIndicator';
 import { performOCRExtraction } from './services/ocrService';
 import { detectRotationAngle, rotateImage } from './services/angleDetectionService';
-import { DEFAULT_VIEW_STATE, PROCESSING_DELAY } from './constants';
+import { DEFAULT_VIEW_STATE, PROCESSING_DELAY, APP_VERSION } from './constants';
 import { useImageFilters } from './hooks/useImageFilters';
 import { useLogger } from './hooks/useLogger';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { generateProcessedImage, isHeicFile, formatFileSize, getFileFormat } from './utils/imageProcessing';
 import { hasApiKey } from './config/env';
 import heic2any from 'heic2any';
+
+// Self-healing cache verification: notify HTML that JS bundle loaded correctly
+declare global {
+  interface Window {
+    __DOCKEROCR_VERIFY_VERSION__?: (version: string) => void;
+    __DOCKEROCR_BUILD_VERSION__?: string;
+  }
+}
+
+// Verify version on module load
+if (typeof window !== 'undefined' && window.__DOCKEROCR_VERIFY_VERSION__) {
+  window.__DOCKEROCR_VERIFY_VERSION__(APP_VERSION);
+}
 
 type LeftTab = 'source' | 'editor' | 'process';
 type ViewMode = 'edit' | 'text';

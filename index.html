@@ -3,7 +3,57 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Cache control: prevent stale versions -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>DockerOCR Dashboard</title>
+    <!-- Self-healing cache buster: detects stale cached JS and forces refresh -->
+    <script>
+      (function() {
+        // Build version is injected at build time - this MUST match the version in the JS bundle
+        window.__DOCKEROCR_BUILD_VERSION__ = '__BUILD_VERSION__';
+        window.__DOCKEROCR_BUILD_TIMESTAMP__ = '__BUILD_TIMESTAMP__';
+
+        // Check for stale cache on subsequent loads
+        var cacheKey = 'dockerocr_last_version';
+        var storedVersion = localStorage.getItem(cacheKey);
+        var currentVersion = window.__DOCKEROCR_BUILD_VERSION__;
+
+        // If we have a stored version and it's different, we might have stale JS
+        // The JS bundle will call window.__DOCKEROCR_VERIFY_VERSION__ to confirm it loaded correctly
+        window.__DOCKEROCR_CACHE_CHECK_PENDING__ = true;
+
+        // Timeout: if JS bundle doesn't verify within 5 seconds, force refresh
+        window.__DOCKEROCR_VERIFY_TIMEOUT__ = setTimeout(function() {
+          if (window.__DOCKEROCR_CACHE_CHECK_PENDING__) {
+            console.warn('[DockerOCR] Stale cache detected - JS bundle failed to load. Forcing refresh...');
+            // Clear all caches and reload
+            if ('caches' in window) {
+              caches.keys().then(function(names) {
+                names.forEach(function(name) { caches.delete(name); });
+              });
+            }
+            localStorage.removeItem(cacheKey);
+            sessionStorage.clear();
+            // Force hard refresh
+            location.reload(true);
+          }
+        }, 5000);
+
+        // Function for JS bundle to call to verify it loaded correctly
+        window.__DOCKEROCR_VERIFY_VERSION__ = function(jsVersion) {
+          clearTimeout(window.__DOCKEROCR_VERIFY_TIMEOUT__);
+          window.__DOCKEROCR_CACHE_CHECK_PENDING__ = false;
+
+          // Store current version for next load
+          localStorage.setItem(cacheKey, jsVersion);
+
+          // Log success
+          console.log('[DockerOCR] ✅ App loaded successfully. Version:', jsVersion);
+        };
+      })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>

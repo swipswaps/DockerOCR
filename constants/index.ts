@@ -4,6 +4,10 @@ import { ImageFilters } from '../types';
  * Application constants
  */
 
+// App version for cache busting - updated automatically during build
+// This MUST be updated whenever you want to invalidate browser caches
+export const APP_VERSION = '2.0.0-' + Date.now().toString(36);
+
 // Image Processing
 export const DEFAULT_FILTERS: ImageFilters = {
   contrast: 100,
